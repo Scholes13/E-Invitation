@@ -32,7 +32,11 @@
 
             intro.innerHTML = `${data.intro}`;
             guest.innerHTML = `${data.guest}`;
-            pesanku.innerHTML = `${data.pesanku}`;
+            if (data.pesanku) {
+                pesanku.innerHTML = `${data.pesanku}`;
+            } else {
+                pesanku.innerHTML = '';
+            }
             meja.innerHTML = `${data.meja}`;
 
             // Menampilkan gambar dengan ukuran yang lebih kecil
@@ -48,7 +52,7 @@
                 guest.innerHTML = '';
                 aipoto.innerHTML = '';
                 pesanku.innerHTML = '';
-                table_number.innerHTML = '';
+                meja.innerHTML = '';
             }, 6000);
         });
     </script>

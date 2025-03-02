@@ -18,6 +18,7 @@ class Guest extends Model
         "email_guest",
         "phone_guest",
         "nik_guest",
+        "custom_message",
     ];
 
     public function invitation()

@@ -21,6 +21,7 @@ class Invitation extends Model
         "send_email_invitation",
         "checkin_invitation",
         "checkout_invitation",
+        "custom_message",
     ];
 
     // public $timestamps = false;

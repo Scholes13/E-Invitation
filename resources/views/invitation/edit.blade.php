@@ -68,6 +68,13 @@
                           <small class="text-danger"> {{ $message }} </small>
                         @enderror
                       </div>
+                      <div class="form-group">
+                        <label for="">Pesan Khusus</label>
+                        <textarea class="form-control" name="custom_message" rows="4">{{ old('custom_message', $invitation->custom_message ?? '') }}</textarea>
+                        @error('custom_message')
+                          <small class="text-danger"> {{ $message }} </small>
+                        @enderror
+                      </div>
                     </div>
                     <div class="col-xl-6">
                       <div class="form-group">

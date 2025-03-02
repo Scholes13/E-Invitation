@@ -42,14 +42,14 @@
                       <td>{{ $user->role == 1 ? "Admin" : "Resepsionis" }}</td>
                       <td class="text-center">
                         <a data-toggle="tooltip" data-placement="top" data-original-title="Edit" class="btn btn-sm btn-primary" href="{{ url('user/edit/'. $user->id) }}"><i class="fa fa-pencil-alt"></i></a>
-                        <form action="{{ url('user/delete') }}" method="POST" class="d-inline" id="del-{{ $user->id_user }}">
+                        <form action="{{ url('user/delete') }}" method="POST" class="d-inline" id="del-{{ $user->id }}-{{ $key }}">
                           @method("DELETE")
                           @csrf
                           <input type="hidden" name="id" value="{{ $user->id }}">
                           @if ($user->id != 1)
-                          <button data-toggle="tooltip" data-placement="top" data-original-title="Hapus" class="btn btn-danger btn-sm" data-confirm="Hapus Data|Anda yakin hapus data ini?" data-confirm-yes="$('#del-{{ $user->id_user }}').submit()">
+                          <button data-toggle="tooltip" data-placement="top" data-original-title="Hapus" class="btn btn-danger btn-sm" data-confirm="Hapus Data|Anda yakin hapus data ini?" data-confirm-yes="setTimeout(function() { $('#del-{{ $user->id }}-{{ $key }}').submit(); }, 100);">
                             <i class="fas fa-trash"></i>
-                          </button>                           
+                          </button>
                           @endif
                         </form>
                       </td>

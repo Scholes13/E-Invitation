@@ -70,6 +70,13 @@
                   @enderror
                 </div>
                 <div class="form-group">
+                  <label for="">Pesan Khusus</label>
+                  <textarea class="form-control" name="custom_message" rows="4">{{ old('custom_message', $guest->custom_message) }}</textarea>
+                  @error('custom_message')
+                    <small class="text-danger"> {{ $message }} </small>
+                  @enderror
+                </div>
+                <div class="form-group">
                   <button class="btn btn-primary"><i class="fa fa-save"></i> Simpan</button>
                 </div>
               </div>

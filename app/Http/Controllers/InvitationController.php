@@ -18,7 +18,7 @@ use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
-
+use Illuminate\Support\Facades\DB;
 class InvitationController extends Controller
 {
 
@@ -204,6 +204,7 @@ class InvitationController extends Controller
             "link_invitation"               => '/invitation/' . $qrcode,
             "image_qrcode_invitation"       => '/img/qrCode/' . $qrcode . ".png",
             "id_event"                      => 1,
+            "custom_message"               => $request->custom_message,
         ]);
 
         return redirect('/invite')->with('success', "Berhasil menambah data");
@@ -219,17 +220,24 @@ class InvitationController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'type'           => 'required',
+            'custom_message' => 'nullable',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        Invitation::where('id_invitation', $id)->update([
-            "type_invitation"               => $request->type,
-            "table_number_invitation"       => $request->table_number,
-            "information_invitation"        => $request->information,
-        ]);
+        try {
+            DB::update('UPDATE invitation SET type_invitation = ?, table_number_invitation = ?, information_invitation = ?, custom_message = ? WHERE id_invitation = ?', [
+                $request->type,
+                $request->table_number,
+                $request->information,
+                $request->custom_message,
+                $id
+            ]);
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+        }
 
         return redirect('invite')->with('success', "Berhasil mengedit data");
     }

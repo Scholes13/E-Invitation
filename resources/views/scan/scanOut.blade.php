@@ -66,9 +66,24 @@
                     height: 375,
                     image_format: 'jpeg',
                     jpeg_quality: 90,
-                    flip_horiz: true
+                    // flip_horiz: true // Removed this line
                 });
                 Webcam.attach('#my-camera');
+
+                 // Detect facing mode and apply CSS transform
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+                    .then(stream => {
+                        const videoTrack = stream.getVideoTracks()[0];
+                        const capabilities = videoTrack.getCapabilities();
+
+                        if (capabilities.facingMode && capabilities.facingMode.includes('user')) {
+                            // Front-facing camera, apply horizontal flip
+                            document.getElementById('my-camera').querySelector('video').style.transform = 'scaleX(-1)';
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error accessing media devices.", err);
+                    });
             }
 
             function cameraOff() {

@@ -47,6 +47,7 @@ class GuestController extends Controller
             "phone_guest"           => $request->phone,
             "address_guest"         => $request->address,
             "created_by_guest"      => "admin",
+            "custom_message"        => $request->custom_message,
         ]);
 
 
@@ -87,6 +88,7 @@ class GuestController extends Controller
             "phone_guest"           => $request->phone,
             "address_guest"         => $request->address,
             "created_by_guest"      => "admin",
+            "custom_message"        => $request->custom_message,
         ]);
 
         return redirect('/guest')->with('success', "Berhasil mengedit data");

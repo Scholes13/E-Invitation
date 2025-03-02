@@ -40,24 +40,6 @@ class ScanController extends Controller
                 $message = "Tamu sudah scan-in";
             }
 
-              // Menyesuaikan pesan berdasarkan nama tamu
-            if ($invt->name_guest == "Dwi Krismiyanto") {
-                $pesanku = "Kayune mana Wik???";
-                $invt->table_number_invitation;
-            } elseif ($invt->name_guest == "Alya Widuri Pelitahati") {
-                $pesanku = "Are you a magician? Because whenever I look at you, everyone else disappears.";
-                $aipoto = 'https://prawam.maharajapratama.com/images/labubu.png';
-                $invt->table_number_invitation;
-            } elseif ($invt->name_guest == "Adiel Priyarama") {
-                $pesanku = "Do you have a map? Because I keep getting lost in your eyes.";
-                $aipoto = 'https://prawam.maharajapratama.com/images/Adiel.png';
-                $invt->table_number_invitation;
-            } else {
-                $pesanku = "Welcome, " . $invt->name_guest . "!";
-                $aipoto = 'https://prawam.maharajapratama.com/images/default.png';
-                $invt->table_number_invitation;
-            }
-
             // event(new GreetingEvent('hello world'));
             // Konfigurasi Pusher
             $pusher = new Pusher(
@@ -70,13 +52,20 @@ class ScanController extends Controller
                 ]
             );
             // Kirim event ke channel "greetings" dengan event "new-scan"
-            $pusher->trigger('greetings', 'new-scan', [
+
+            $data = [
                 'intro' => 'Welcome',
-                'guest' => $invt->name_guest,   
-                'pesanku' => $pesanku, // pesan pribadi
-                'aipoto' => $aipoto,
+                'guest' => $invt->name_guest,
                 'meja' => $invt->table_number_invitation,
-            ]);
+            ];
+
+            if ($invt->custom_message) {
+                $data['pesanku'] = $invt->custom_message;
+            }
+            $data['aipoto'] = 'https://prawam.maharajapratama.com/images/default.png';
+
+            $pusher->trigger('greetings', 'new-scan', $data);
+
         } else {
             $status = "error";
             $message = "Kode tidak ditemukan";

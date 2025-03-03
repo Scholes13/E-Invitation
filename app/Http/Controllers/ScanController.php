@@ -43,16 +43,6 @@ class ScanController extends Controller
             if($invt->checkin_invitation == null){
                 $status = "success";
                 $data['checkin_invitation'] = Carbon::now();
-                if($file = $request->file('webcam')){
-                    $request->validate([
-                        'webcam' => 'image|mimes:jpeg,png,jpg|max:2048'
-                    ]);
-
-                    File::ensureDirectoryExists(public_path('img/scan/scan-in'));
-                    $fileName = $request->qrcode . ".jpeg";
-                    $file->move(public_path('img/scan/scan-in'), $fileName);
-                    $data['checkin_img_invitation'] = $fileName;
-                }
                 Invitation::where('id_invitation', $invt->id_invitation)->update($data);
                 $message = "Welcome : ".$invt->name_guest;
             } else {
@@ -105,16 +95,6 @@ class ScanController extends Controller
             } else if($invt->checkout_invitation == null) {
                 $status = "success";
                 $data['checkout_invitation'] = Carbon::now();
-                if($file = $request->file('webcam')){
-                    $request->validate([
-                        'webcam' => 'image|mimes:jpeg,png,jpg|max:2048'
-                    ]);
-
-                    File::ensureDirectoryExists(public_path('img/scan/scan-out'));
-                    $fileName = $request->qrcode . ".jpeg";
-                    $file->move(public_path('img/scan/scan-out'), $fileName);
-                    $data['checkout_img_invitation'] = $fileName;
-                }
                 Invitation::where('id_invitation', $invt->id_invitation)->update($data);
                 $message = $invt->name_guest.", terima kasih kehadirannya";
                 

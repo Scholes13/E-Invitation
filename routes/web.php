@@ -11,7 +11,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DoorprizeController;
-
+use App\Http\Controllers\BlastingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -121,8 +121,10 @@ Route::middleware(['auth'])->group(function () {
 
         // Route setting app
         Route::controller(SettingController::class)->group(function () {
-            Route::get('setting', 'index');
-            Route::put('setting/update', 'settingUpdate');
+            Route::get('setting', 'index')->name('setting.setting_app');
+            Route::put('setting/update', 'settingAppUpdate')->name('setting.settingAppUpdate');
+            Route::get('setting/email-template', 'emailTemplate')->name('setting.emailTemplate');
+            Route::put('setting/email-template/update', 'emailTemplateUpdate')->name('setting.emailTemplateUpdate');
         });
 
         // Route user
@@ -136,4 +138,9 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
+    // Route blasting
+    Route::controller(BlastingController::class)->group(function () {
+        Route::get('/blasting', 'index')->name('blasting.index');
+        Route::post('/blasting/send', 'send')->name('blasting.send');
+    })->middleware('admin');
 });

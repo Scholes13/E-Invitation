@@ -98,8 +98,13 @@
 								<i class="fas fa-list-ul"></i> <span>Log Kedatangan</span>
 							</a>
 						</li>
+							                 <li class="{{ request()->segment(1) == 'blasting' ? 'active' : '' }}">
+							                     <a class="nav-link" href="{{ url('blasting') }}">
+							                         <i class="fas fa-bullhorn"></i> <span>Blasting</span>
+							                     </a>
+							                 </li>
 						<li class="menu-header">Setting</li>
-                        @if (auth()->user()->role == 1)
+							                 @if (auth()->user()->role == 1)
 						<li class="{{ request()->segment(1) == 'event' ? 'active' : '' }}">
 							<a class="nav-link" href="{{ url('event') }}">
 								<i class="fas fa-calendar-check"></i> <span>Acara</span>

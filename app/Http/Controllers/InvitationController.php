@@ -216,30 +216,35 @@ class InvitationController extends Controller
         return view('invitation.edit', compact('invitation'));
     }
 
-    public function update(Request $request, $id)
+  public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'type'           => 'required',
-            'custom_message' => 'nullable',
-        ]);
+      $validator = Validator::make($request->all(), [
+        'type' => 'required',
+        'custom_message' => 'nullable', // Ensure custom_message is allowed
+      ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
+      if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput();
+      }
 
-        try {
-            DB::update('UPDATE invitation SET type_invitation = ?, table_number_invitation = ?, information_invitation = ?, custom_message = ? WHERE id_invitation = ?', [
-                $request->type,
-                $request->table_number,
-                $request->information,
-                $request->custom_message,
-                $id
+      $invitation = Invitation::findOrFail($id);
+
+      $invitation->update([
+        'type_invitation' => $request->type,
+        'table_number_invitation' => $request->table_number,
+        'information_invitation' => $request->information,
+        'custom_message' => $request->custom_message, // Update invitation's custom_message
+      ]);
+
+      // Update the related guest's custom_message
+      $guest = $invitation->guest;
+        if ($guest) {
+            $guest->update([
+              'custom_message' => $request->custom_message,
             ]);
-        } catch (\Exception $e) {
-            dd($e->getMessage());
         }
 
-        return redirect('invite')->with('success', "Berhasil mengedit data");
+      return redirect('invite')->with('success', "Berhasil mengedit data");
     }
 
     public function delete(Request $request)

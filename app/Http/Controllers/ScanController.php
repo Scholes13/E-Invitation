@@ -14,6 +14,19 @@ use Pusher\Pusher;
 
 class ScanController extends Controller
 {
+    protected function getPusherInstance()
+    {
+        return new Pusher(
+            env('PUSHER_APP_KEY'),
+            env('PUSHER_APP_SECRET'),
+            env('PUSHER_APP_ID'),
+            [
+                'cluster' => env('PUSHER_APP_CLUSTER'),
+                'useTLS' => true,
+            ]
+        );
+    }
+
     public function scanIn()
     {
         return view("scan.scanIn");
@@ -22,16 +35,23 @@ class ScanController extends Controller
     public function scanInProcess(Request $request)
     {
         $invt = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-            ->where('qrcode_invitation',  $request->qrcode)->first();
+            ->where('qrcode_invitation',  $request->qrcode)
+            ->select('invitation.*', 'guest.name_guest', 'guest.custom_message as guest_custom_message')
+            ->first();
 
         if($invt) {
             if($invt->checkin_invitation == null){
                 $status = "success";
                 $data['checkin_invitation'] = Carbon::now();
                 if($file = $request->file('webcam')){
+                    $request->validate([
+                        'webcam' => 'image|mimes:jpeg,png,jpg|max:2048'
+                    ]);
+
                     File::ensureDirectoryExists(public_path('img/scan/scan-in'));
-                    $file->move(public_path('img/scan/scan-in'), $request->qrcode . ".jpeg" );
-                    $data['checkin_img_invitation'] = $request->qrcode . ".jpeg";
+                    $fileName = $request->qrcode . ".jpeg";
+                    $file->move(public_path('img/scan/scan-in'), $fileName);
+                    $data['checkin_img_invitation'] = $fileName;
                 }
                 Invitation::where('id_invitation', $invt->id_invitation)->update($data);
                 $message = "Welcome : ".$invt->name_guest;
@@ -42,15 +62,7 @@ class ScanController extends Controller
 
             // event(new GreetingEvent('hello world'));
             // Konfigurasi Pusher
-            $pusher = new Pusher(
-                env('PUSHER_APP_KEY'),
-                env('PUSHER_APP_SECRET'),
-                env('PUSHER_APP_ID'),
-                [
-                    'cluster' => env('PUSHER_APP_CLUSTER'),
-                    'useTLS' => true,
-                ]
-            );
+            $pusher = $this->getPusherInstance();
             // Kirim event ke channel "greetings" dengan event "new-scan"
 
             $data = [
@@ -59,10 +71,9 @@ class ScanController extends Controller
                 'meja' => $invt->table_number_invitation,
             ];
 
-            if ($invt->custom_message) {
-                $data['pesanku'] = $invt->custom_message;
+            if (!empty(trim($invt->guest_custom_message ?? ''))) {
+                $data['custom_message'] = $invt->guest_custom_message;
             }
-            $data['aipoto'] = 'https://prawam.maharajapratama.com/images/default.png';
 
             $pusher->trigger('greetings', 'new-scan', $data);
 
@@ -95,9 +106,14 @@ class ScanController extends Controller
                 $status = "success";
                 $data['checkout_invitation'] = Carbon::now();
                 if($file = $request->file('webcam')){
+                    $request->validate([
+                        'webcam' => 'image|mimes:jpeg,png,jpg|max:2048'
+                    ]);
+
                     File::ensureDirectoryExists(public_path('img/scan/scan-out'));
-                    $file->move(public_path('img/scan/scan-out')  , $request->qrcode . ".jpeg" );
-                    $data['checkout_img_invitation'] = $request->qrcode . ".jpeg";
+                    $fileName = $request->qrcode . ".jpeg";
+                    $file->move(public_path('img/scan/scan-out'), $fileName);
+                    $data['checkout_img_invitation'] = $fileName;
                 }
                 Invitation::where('id_invitation', $invt->id_invitation)->update($data);
                 $message = $invt->name_guest.", terima kasih kehadirannya";
@@ -107,15 +123,7 @@ class ScanController extends Controller
                 $message = "Tamu sudah scan-out";
             }
 
-            $pusher = new Pusher(
-                env('PUSHER_APP_KEY'),
-                env('PUSHER_APP_SECRET'),
-                env('PUSHER_APP_ID'),
-                [
-                    'cluster' => env('PUSHER_APP_CLUSTER'),
-                    'useTLS' => true,
-                ]
-            );
+            $pusher = $this->getPusherInstance();
             $pusher->trigger('greetings', 'new-scan', [
                 'intro' => 'Thank you for coming',
                 'guest' => $invt->name_guest,

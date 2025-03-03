@@ -15,6 +15,9 @@ class GuestSeeder extends Seeder
      */
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('guest')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         for($i=1; $i<=20; $i++){
             Guest::create([
                 "name_guest"            => fake()->name,
@@ -22,6 +25,7 @@ class GuestSeeder extends Seeder
                 "information_guest"     => fake()->jobTitle,
                 "email_guest"           => fake()->email,
                 "phone_guest"           => fake()->phoneNumber,
+                "code_guest"            => Str::uuid(),
             ]);
         }
     }

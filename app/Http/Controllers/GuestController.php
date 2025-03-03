@@ -56,7 +56,7 @@ class GuestController extends Controller
 
     public function edit($id)
     {
-        $guest = Guest::where('id_guest', $id)->first();
+        $guest = Guest::findOrFail($id);
         return view('guest.edit', compact('guest'));
     }
 

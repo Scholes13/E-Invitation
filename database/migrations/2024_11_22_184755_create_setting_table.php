@@ -21,6 +21,7 @@ return new class extends Migration
             $table->boolean('send_email')->nullable()->default(FALSE);
             $table->boolean('send_whatsapp')->nullable()->default(FALSE);
             $table->boolean('greeting_page')->nullable()->default(FALSE);
+            $table->longText('email_template_blasting')->nullable();
             $table->timestamps();
         });
     }

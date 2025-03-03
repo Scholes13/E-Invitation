@@ -18,8 +18,8 @@ return new class extends Migration
             $table->text('type_event');
             $table->text('place_event');
             $table->text('location_event');
-            $table->timestamp("start_event");
-            $table->timestamp("end_event");
+            $table->timestamp("start_event")->nullable();
+            $table->timestamp("end_event")->nullable();
             $table->text("information_event")->nullable();
             $table->string("image_event")->nullable();
             $table->timestamps();

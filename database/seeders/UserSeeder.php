@@ -15,32 +15,15 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $data = [
+            
             [
                 "id"                => 1,
-                "name"              => "Administrator",
-                "email"             => "admin@yukcoding.id",
-                "username"          => "admin",
-                "password"          => Hash::make("123456"),
+                "name"              => "Pramuji",
+                "email"             => "pramuji@example.com",
+                "username"          => "pramuji",
+                "password"          => Hash::make("bhayangkara1"),
                 "role"              => 1,
-                "information"       => "Admin Utama",
-            ],
-            [
-                "id"                => 2,
-                "name"              => "Agus",
-                "email"             => "agus@yukcoding.id",
-                "username"          => "agus",
-                "password"          => Hash::make("123456"),
-                "role"              => 2,
-                "information"       => "Resepsionis 1",
-            ],
-            [
-                "id"                => 3,
-                "name"              => "Ujang",
-                "email"             => "ujang@yukcoding.id",
-                "username"          => "ujang",
-                "password"          => Hash::make("123456"),
-                "role"              => 2,
-                "information"       => "Resepsionis 2",
+                "information"       => "Admin Tambahan",
             ],
         ];
         User::insert($data);

@@ -35,13 +35,13 @@
                   @enderror
                 </div>
                 <div class="form-group">
-                  <label for="">ID Identitas</label>
-                  <input class="form-control" name="nik" value="{{ old('nik', $guest->nik_guest) }}" type="text">
-                  @error('nik')
+                  <label for="">Company</label>
+                  <input class="form-control" name="company" value="{{ old('company', $guest->company_guest) }}" type="text">
+                  @error('company')
                     <small class="text-danger"> {{ $message }} </small>
                   @enderror
                 </div>
-                <div class="form-group">
+                 <div class="form-group">
                   <label for="">Email *</label>
                   <input class="form-control" name="email" value="{{ old('email', $guest->email_guest) }}" type="text">
                   @error('email')

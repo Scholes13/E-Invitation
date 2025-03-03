@@ -14,10 +14,9 @@ class Guest extends Model
     protected $fillable = [
         "name_guest",
         "address_guest",
-        "information_guest",
         "email_guest",
         "phone_guest",
-        "nik_guest",
+        "company_guest",
         "custom_message",
     ];
 

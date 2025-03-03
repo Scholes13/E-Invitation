@@ -271,40 +271,38 @@ class InvitationController extends Controller
 
     public function guestRegisterProcess(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name'          => 'required',
-            // 'nik'           => 'required|unique:guest,nik_guest',
-            'email'         => 'required|email',
-            'phone'         => 'required',
-            // 'address'       => 'required',
-        ]);
+    $validator = Validator::make($request->all(), [
+      'name' => 'required',
+      'email' => 'required|email',
+      'phone' => 'required',
+      'company' => 'required',
+    ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
+    if ($validator->fails()) {
+      return redirect()->back()->withErrors($validator)->withInput();
+    }
 
-        $guest = Guest::create([
-            "name_guest"            => $request->name,
-            "nik_guest"             => $request->nik,
-            "information_guest"     => $request->information,
-            "email_guest"           => $request->email,
-            "phone_guest"           => $request->phone,
-            "address_guest"         => $request->address,
-            "created_by_guest"      => "register",
-        ]);
+     $guest = Guest::create([
+        "name_guest"            => $request->name,
+        "company_guest"             => $request->company,
+        "email_guest"           => $request->email,
+        "phone_guest"           => $request->phone,
+        "address_guest"         => $request->address,
+        "created_by_guest"      => "register",
+    ]);
 
-        $qrcode = $this->generateCode();
-        $this->qrcodeGenerator($qrcode);
-        Invitation::create([
-            "id_guest"                      => $guest->id_guest,
-            "qrcode_invitation"             => $qrcode,
-            "type_invitation"               => "reguler",
-            "link_invitation"               => '/invitation/' . $qrcode,
-            "image_qrcode_invitation"       => '/img/qrCode/' . $qrcode . ".png",
-            "id_event"                      => 1,
-        ]);
+    $qrcode = $this->generateCode();
+    $this->qrcodeGenerator($qrcode);
+    Invitation::create([
+      "id_guest"                      => $guest->id_guest,
+      "qrcode_invitation"             => $qrcode,
+      "type_invitation"               => "reguler",
+      "link_invitation"               => '/invitation/' . $qrcode,
+      "image_qrcode_invitation"       => '/img/qrCode/' . $qrcode . ".png",
+      "id_event"                      => 1,
+    ]);
 
-        return redirect('/invitation/' . $qrcode)->with("register-success", "Terima kasih telah melakukan registrasi. Silahkan download QR untuk ditunjukan saat acara.");
+    return redirect('/invitation/' . $qrcode)->with("register-success", "Terima kasih telah melakukan registrasi. Silahkan download QR untuk ditunjukan saat acara.");
 
     }
 

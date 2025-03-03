@@ -24,34 +24,31 @@ class GuestController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name'          => 'required',
-            // 'nik'           => 'required|unique:guest,nik_guest',
-            'email'         => 'required|email',
-            'phone'         => 'required',
-            // 'address'       => 'required',
-        ]);
+    $validator = Validator::make($request->all(), [
+      'name' => 'required',
+      'email' => 'required|email',
+      'phone' => 'required',
+      // 'address' => 'required',
+    ]);
 
-        if ($validator->fails()) {
-            return redirect()
-                ->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
+    if ($validator->fails()) {
+      return redirect()
+        ->back()
+        ->withErrors($validator)
+        ->withInput();
+    }
 
-        Guest::create([
-            "name_guest"            => $request->name,
-            "nik_guest"             => $request->nik,
-            "information_guest"     => $request->information,
-            "email_guest"           => $request->email,
-            "phone_guest"           => $request->phone,
-            "address_guest"         => $request->address,
-            "created_by_guest"      => "admin",
-            "custom_message"        => $request->custom_message,
-        ]);
+    Guest::create([
+      "name_guest" => $request->name,
+      "company_guest" => $request->company,
+      "email_guest" => $request->email,
+      "phone_guest" => $request->phone,
+      "address_guest" => $request->address,
+      "created_by_guest" => "admin",
+      "custom_message" => $request->custom_message,
+    ]);
 
-
-        return redirect('/guest')->with('success', "Berhasil menambah data");
+    return redirect('/guest')->with('success', "Berhasil menambah data");
     }
 
     public function edit($id)
@@ -68,30 +65,30 @@ class GuestController extends Controller
             //     'required',
             //     Rule::unique('guest', 'nik_guest')->ignore($id, 'id_guest')
             // ],
-            'email'         => 'required|email',
-            'phone'         => 'required',
-            'address'       => 'required',
-        ]);
+      'name' => 'required',
+      'email' => 'required|email',
+      'phone' => 'required',
+      'address' => 'required',
+    ]);
 
-        if ($validator->fails()) {
-            return redirect()
-                ->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
+    if ($validator->fails()) {
+      return redirect()
+        ->back()
+        ->withErrors($validator)
+        ->withInput();
+    }
 
-        Guest::where('id_guest', $id)->update([
-            "name_guest"            => $request->name,
-            "nik_guest"             => $request->nik,
-            "information_guest"     => $request->information,
-            "email_guest"           => $request->email,
-            "phone_guest"           => $request->phone,
-            "address_guest"         => $request->address,
-            "created_by_guest"      => "admin",
-            "custom_message"        => $request->custom_message,
-        ]);
+    Guest::where('id_guest', $id)->update([
+      "name_guest" => $request->name,
+      "company_guest" => $request->company,
+      "email_guest" => $request->email,
+      "phone_guest" => $request->phone,
+      "address_guest" => $request->address,
+      "created_by_guest" => "admin",
+      "custom_message" => $request->custom_message,
+    ]);
 
-        return redirect('/guest')->with('success', "Berhasil mengedit data");
+    return redirect('/guest')->with('success', "Berhasil mengedit data");
     }
 
 

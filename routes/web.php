@@ -25,8 +25,8 @@ use App\Http\Controllers\BlastingController;
 */
 
 Route::get('/', function () {
-    return redirect('/dashboard');
-    // return view('guest.index');   
+    return redirect('/register');
+    // return view('guest.index');
 });
 
 Route::get('/doorprize', [DoorprizeController::class, 'index'])->name('doorprize.index');

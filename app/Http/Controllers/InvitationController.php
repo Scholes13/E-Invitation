@@ -72,9 +72,9 @@ class InvitationController extends Controller
     }
     private function generateCode()
     {
-        $qrcode = Str::random(6);
+        $qrcode = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT); // Generate 4-digit number
         if ($this->checkUniq($qrcode)) {
-            return $this->generateCode();
+            return $this->generateCode(); // Regenerate if not unique
         }
         return $qrcode;
     }

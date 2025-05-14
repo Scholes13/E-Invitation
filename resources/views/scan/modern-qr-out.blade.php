@@ -6,32 +6,37 @@
 <style>
     #video-container {
         position: relative;
-        width: 500px;
-        height: 375px;
+        width: 90%;
+        max-width: 600px;
+        height: auto;
+        aspect-ratio: 4/3;
         margin: 0 auto;
-        border: 2px solid #6c3c0c;
-        border-radius: 5px;
+        border-radius: 12px;
         overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     }
     #camera-video {
         width: 100%;
         height: 100%;
-        /* Tidak menggunakan mirror effect */
-        /* transform: scaleX(-1); */
+        object-fit: cover;
     }
     #camera-canvas {
         display: none;
     }
-    .camera-controls {
-        margin-top: 15px;
-        text-align: center;
-    }
     #scan-result {
         display: none;
-        margin-top: 15px;
-        padding: 10px;
-        border-radius: 5px;
-        background-color: rgba(255, 255, 255, 0.1);
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        color: #fff;
+        text-align: center;
+        font-weight: 500;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        max-width: 90%;
+        margin-left: auto;
+        margin-right: auto;
     }
     .scan-overlay {
         position: absolute;
@@ -39,10 +44,43 @@
         left: 0;
         width: 100%;
         height: 100%;
-        border: 2px solid transparent;
         box-sizing: border-box;
         pointer-events: none;
         z-index: 10;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .qr-frame {
+        position: absolute;
+        width: 70%;
+        height: 70%;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
+    }
+    .qr-frame::before, .qr-frame::after {
+        content: '';
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border-color: #fff;
+        border-style: solid;
+        border-width: 0;
+    }
+    .qr-frame::before {
+        top: -2px;
+        left: -2px;
+        border-top-width: 4px;
+        border-left-width: 4px;
+        border-top-left-radius: 12px;
+    }
+    .qr-frame::after {
+        top: -2px;
+        right: -2px;
+        border-top-width: 4px;
+        border-right-width: 4px;
+        border-top-right-radius: 12px;
     }
     .scan-highlight {
         border-color: #28a745;
@@ -64,13 +102,13 @@
     }
     .loader {
         display: none;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #6c3c0c;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid #fff;
         border-radius: 50%;
         width: 40px;
         height: 40px;
         animation: spin 1s linear infinite;
-        margin: 15px auto;
+        margin: 20px auto;
     }
     @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -78,43 +116,78 @@
     }
     #cooldown-info {
         display: none;
-        margin-top: 10px;
-        padding: 5px 10px;
+        margin: 20px auto;
+        padding: 12px 15px;
         text-align: center;
         background-color: rgba(220, 53, 69, 0.2);
-        border-radius: 5px;
+        backdrop-filter: blur(5px);
+        border-radius: 8px;
         color: #fff;
+        max-width: 90%;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     }
     #last-scan-info {
-        margin-top: 15px;
-        padding: 10px;
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 5px;
+        margin: 20px auto;
+        padding: 12px 15px;
+        background-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        border-radius: 8px;
         color: #fff;
         display: none;
+        max-width: 90%;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    #camera-error {
+        background-color: rgba(220, 53, 69, 0.2);
+        backdrop-filter: blur(5px);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        max-width: 90%;
+        margin: 20px auto;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    .scan-title {
+        margin-bottom: 25px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .status-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        z-index: 20;
+        display: none;
+    }
+    .camera-active .status-badge {
+        display: block;
     }
 </style>
 
 <div class="container pt-5">
     <div class="form-group mt-5">
-        <h2 class="text-light text-center">QR Scanner Out</h2>
+        <h2 class="text-light text-center scan-title">QR Scanner Out</h2>
         
-        <div class="row justify-content-center mt-4">
-            <div class="col-lg-8">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
                 <div class="card-body">
-                    <div id="video-container">
+                    <div id="video-container" class="camera-active">
                         <video id="camera-video" autoplay playsinline></video>
                         <canvas id="camera-canvas"></canvas>
-                        <div class="scan-overlay" id="scan-overlay"></div>
+                        <div class="scan-overlay" id="scan-overlay">
+                            <div class="qr-frame"></div>
+                        </div>
+                        <div class="status-badge">Camera Active</div>
                     </div>
                     <div class="loader" id="processing-loader"></div>
                     <div id="scan-result" class="text-light text-center"></div>
                     <div id="cooldown-info" class="text-light"></div>
                     <div id="last-scan-info" class="text-light text-center"></div>
-                    <div class="camera-controls">
-                        <button id="change-camera" class="btn btn-secondary">Ganti Kamera</button>
-                        <button id="toggle-mirror" class="btn btn-info ml-2">Toggle Mirror</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -315,8 +388,8 @@
                 const constraints = {
                     video: {
                         deviceId: cameraId ? { exact: cameraId } : undefined,
-                        width: { ideal: 500 },
-                        height: { ideal: 375 },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
                         facingMode: { ideal: "environment" } // Prefer back camera
                     },
                     audio: false
@@ -355,6 +428,24 @@
             }
         }
         
+        // Double tap to switch camera
+        let lastTap = 0;
+        document.getElementById('video-container').addEventListener('touchend', function(e) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (tapLength < 500 && tapLength > 0) {
+                // Double tap detected
+                if (availableCameras.length > 1) {
+                    currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                    resetScanState();
+                    startCamera();
+                }
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        });
+
         // Scan QR Code from video stream
         function scanQRCode() {
             if (!currentStream || scanning || cooldownActive) {
@@ -479,30 +570,6 @@
                 customAlert({status: "error", message: "Error mengambil gambar: " + error.toString()});
             }
         }
-        
-        // Change camera button
-        $("#change-camera").click(async function() {
-            if (availableCameras.length <= 1) {
-                showError("Hanya ada satu kamera yang tersedia");
-                return;
-            }
-            
-            currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
-            resetScanState();
-            await startCamera();
-        });
-        
-        // Toggle mirror effect
-        $("#toggle-mirror").click(function() {
-            isMirrored = !isMirrored;
-            if (isMirrored) {
-                videoElement.style.transform = "scaleX(-1)";
-                $(this).addClass('active');
-            } else {
-                videoElement.style.transform = "none";
-                $(this).removeClass('active');
-            }
-        });
         
         // Initialize camera on page load
         startCamera();

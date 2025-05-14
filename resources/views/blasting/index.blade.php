@@ -4,15 +4,10 @@
 <div class="main-content">
     <section class="section">
         <div class="section-header">
-            <h1>Blasting</h1>
+            <h1>Email Blasting</h1>
         </div>
 
         <div class="section-body">
-            <h2 class="section-title">Email Blasting</h2>
-            <p class="section-lead">
-                Send invitation emails to registered guests.
-            </p>
-
             <div class="row">
                 <div class="col-12">
                     <div class="card">
@@ -20,14 +15,50 @@
                             <h4>Send Invitations</h4>
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('blasting.send') }}" method="POST">
-                                @csrf
-                                <div class="form-group">
-                                    <button type="submit" name="send_type" value="unsent" class="btn btn-primary">
-                                        Send to All Unsent Invitations
-                                    </button>
+                            @if(session('success'))
+                                <div class="alert alert-success">
+                                    {{ session('success') }}
                                 </div>
-                            </form>
+                            @endif
+                            
+                            @if(session('error'))
+                                <div class="alert alert-danger">
+                                    {{ session('error') }}
+                                </div>
+                            @endif
+
+                            <div class="row feature-cards">
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm feature-card h-100">
+                                        <div class="card-body d-flex flex-column">
+                                            <h5 class="card-title">Send to All Unsent Invitations</h5>
+                                            <p class="card-text flex-fill">This will send emails to all guests who haven't received an invitation yet.</p>
+                                            <div class="card-action mt-auto">
+                                                <form action="{{ route('blasting.send') }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" name="send_type" value="unsent" class="btn btn-primary">
+                                                        <i class="fas fa-paper-plane"></i> Send to All Unsent
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm feature-card h-100">
+                                        <div class="card-body d-flex flex-column">
+                                            <h5 class="card-title">Email Template Settings</h5>
+                                            <p class="card-text flex-fill">Customize your email template with our visual editor.</p>
+                                            <div class="card-action mt-auto">
+                                                <a href="{{ route('setting.emailTemplate') }}" class="btn btn-info">
+                                                    <i class="fas fa-edit"></i> Edit Email Template
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -41,41 +72,37 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table table-striped" id="invitation-table">
                                     <thead>
                                         <tr>
                                             <th>Guest Name</th>
                                             <th>Email</th>
-                                            <th>Status</th>
-                                            <th>Sent At</th>
-                                            <th>Actions</th>
+                                            <th class="text-center">Status</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($invitations as $invitation)
                                         <tr>
-                                            <td>{{ $invitation->guest->name_guest }}</td>
-                                            <td>{{ $invitation->guest->email_guest }}</td>
-                                            <td>
-                                                @if($invitation->email_sent)
+                                            <td>{{ $invitation->name_guest }}</td>
+                                            <td>{{ $invitation->email_guest }}</td>
+                                            <td class="text-center">
+                                                @if($invitation->email_bounced)
+                                                    <span class="badge badge-danger">Bounced</span>
+                                                @elseif($invitation->email_read)
+                                                    <span class="badge badge-info">Read</span>
+                                                @elseif($invitation->email_sent)
                                                     <span class="badge badge-success">Sent</span>
-                                                    @if($invitation->email_read)
-                                                        <span class="badge badge-info">Read</span>
-                                                    @endif
-                                                    @if($invitation->email_bounced)
-                                                        <span class="badge badge-danger">Bounced</span>
-                                                    @endif
                                                 @else
                                                     <span class="badge badge-warning">Not Sent</span>
                                                 @endif
                                             </td>
-                                            <td>{{ $invitation->email_sent ? $invitation->updated_at->format('Y-m-d H:i:s') : '-' }}</td>
-                                            <td>
+                                            <td class="text-center">
                                                 <form action="{{ route('blasting.send') }}" method="POST" class="d-inline">
                                                     @csrf
                                                     <input type="hidden" name="id_invitation" value="{{ $invitation->id_invitation }}">
-                                                    <button type="submit" class="btn btn-sm btn-primary" {{ !$invitation->guest->email_guest ? 'disabled' : '' }}>
-                                                        {{ $invitation->email_sent ? 'Resend' : 'Send' }}
+                                                    <button type="submit" class="btn btn-sm btn-primary" {{ !$invitation->email_guest ? 'disabled' : '' }}>
+                                                        <i class="fas fa-paper-plane"></i> {{ $invitation->email_sent ? 'Resend' : 'Send' }}
                                                     </button>
                                                 </form>
                                             </td>
@@ -92,3 +119,78 @@
     </section>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('#invitation-table').DataTable({
+            "pageLength": 25,
+            "order": [[ 2, "desc" ]]
+        });
+    });
+</script>
+@endpush
+
+@push('styles')
+<style>
+    .badge {
+        padding: 0.4em 0.6em;
+        font-size: 90%;
+        font-weight: 600;
+    }
+    .badge-success {
+        background-color: #28a745;
+    }
+    .badge-info {
+        background-color: #17a2b8;
+    }
+    .badge-warning {
+        color: #212529;
+        background-color: #ffc107;
+    }
+    .badge-danger {
+        background-color: #dc3545;
+    }
+    
+    /* Feature card styles to make boxes equal height */
+    .feature-cards {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .feature-card {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .feature-card .card-body {
+        padding: 25px;
+        height: 100%;
+    }
+    
+    .feature-card .card-title {
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+    
+    .feature-card .card-text {
+        margin-bottom: 20px;
+    }
+    
+    .feature-card .card-action {
+        display: flex;
+        justify-content: flex-start;
+    }
+    
+    .feature-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    @media (max-width: 767.98px) {
+        .feature-card {
+            margin-bottom: 15px;
+        }
+    }
+</style>
+@endpush

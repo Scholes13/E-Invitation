@@ -98,16 +98,24 @@
 								</a>
 							</li>
                         @endif
-                        <li class="{{ request()->segment(1) == 'arrival-log' ? 'active' : '' }}">
-							<a class="nav-link" href="{{ url('arrival-log') }}">
-								<i class="fas fa-list-ul"></i> <span>Log Kedatangan</span>
-							</a>
-						</li>
 							                 <li class="{{ request()->segment(1) == 'blasting' ? 'active' : '' }}">
 							                     <a class="nav-link" href="{{ url('blasting') }}">
 							                         <i class="fas fa-bullhorn"></i> <span>Blasting</span>
 							                     </a>
 							                 </li>
+                        
+                        <li class="menu-header">LOGS</li>
+                        <li class="{{ request()->segment(1) == 'arrival-log' ? 'active' : '' }}">
+							<a class="nav-link" href="{{ url('arrival-log') }}">
+								<i class="fas fa-list-ul"></i> <span>Log Kedatangan</span>
+							</a>
+						</li>
+                        <li class="{{ request()->segment(1) == 'souvenir' && request()->segment(2) == 'logs' ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ url('souvenir/logs') }}">
+                                <i class="fas fa-clipboard-list"></i> <span>Log Souvenir</span>
+                            </a>
+                        </li>
+                        
 						<li class="menu-header">Setting</li>
 							                 @if (auth()->user()->role == 1)
 						<li class="{{ request()->segment(1) == 'event' ? 'active' : '' }}">
@@ -149,11 +157,6 @@
                                 <i class="fas fa-gift"></i> <span>Scan Souvenir</span>
                             </a>
                         </li>
-                        <li class="{{ request()->segment(1) == 'souvenir' && request()->segment(2) == 'logs' ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ url('souvenir/logs') }}">
-                                <i class="fas fa-clipboard-list"></i> <span>Log Souvenir</span>
-                            </a>
-                        </li>
                         <li>
 							<a class="nav-link" href="{{ url('scan/greeting') }}" target="_blank">
 								<i class="fas fa-handshake"></i> <span>Greeting</span>
@@ -175,7 +178,7 @@
                 <div class="footer-left">
                     © 2024 Made with love by Pramuji. Powered by YukCoding Dev.</a>
                 </div>
-                <div class="footer-right">v1.3.2</div>
+                <div class="footer-right">v2.0</div>
             </footer>
         </div>
     </div>

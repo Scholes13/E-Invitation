@@ -4,11 +4,11 @@ use App\Http\Controllers\ArrivedController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
-use App\Http\Controllers\GuestController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SouvenirController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DoorprizeController;
 use App\Http\Controllers\BlastingController;
@@ -76,6 +76,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/scan/out-process', 'scanOutProcess');
     });
 
+    // Route souvenir claim
+    Route::controller(SouvenirController::class)->group(function () {
+        Route::get('/souvenir/scan', 'index')->name('souvenir.scan');
+        Route::post('/souvenir/process-claim', 'processClaim')->name('souvenir.process');
+        Route::get('/souvenir/logs', 'logs')->name('souvenir.logs');
+        Route::get('/souvenir/export', 'export')->name('souvenir.export');
+    });
+
      // Route user change password
      Route::controller(UserController::class)->group(function () {
         Route::get('/user-profile', 'profile');
@@ -112,19 +120,6 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/user/delete/{id}', 'deleteUser');
         });
 
-        // Route Guest
-        Route::controller(GuestController::class)->group(function () {
-            Route::get('/guest', 'index');
-            Route::get('/guest/export', 'export');
-            Route::post('/guest/import', 'import');
-            Route::get('/guest/list', 'listGuest');
-            Route::post('/guest/add', 'addGuest');
-            Route::get('/guest/info/{id}', 'infoGuest');
-            Route::put('/guest/update/{id}', 'updateGuest');
-            Route::delete('/guest/delete/{id}', 'deleteGuest');
-            Route::delete('/guest/delete-all', 'deleteAll');
-        });
-
         // Route Invitation
         Route::controller(InvitationController::class)->group(function () {
             Route::get('/invitation', 'index');
@@ -136,14 +131,28 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/invitation/delete-all', 'deleteAllInvitation');
 
             Route::get('/pdf/{qrcode}', 'streamPDF');
+            
+            // Add the missing /invite routes
+            Route::get('/invite', 'index');
+            Route::get('/invite/create', 'create');
+            Route::post('/invite/store', 'store');
+            Route::get('/invite/edit/{id}', 'edit');
+            Route::put('/invite/update/{id}', 'update');
+            Route::delete('/invite/delete', 'delete');
+            Route::get('/invite/send-email', 'sendEmail');
         });
 
         // Blasting routes
         Route::controller(BlastingController::class)->group(function () {
-            Route::get('/blasting', 'index');
-            Route::post('/blast-all', 'blastAll');
-            Route::post('/blast-selected', 'blastSelected');
-            Route::post('/blast-single/{id}', 'blastSingle');
+            Route::get('/blasting', 'index')->name('blasting.index');
+            Route::post('/blasting/send', 'send')->name('blasting.send');
+            Route::get('/track-email/{code}', 'track')->name('blasting.track');
+        });
+        
+        // Email template settings
+        Route::controller(SettingController::class)->group(function () {
+            Route::get('/setting/email-template', 'emailTemplate')->name('setting.emailTemplate');
+            Route::put('/setting/email-template-update', 'emailTemplateUpdate')->name('setting.emailTemplateUpdate');
         });
     });
 });

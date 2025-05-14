@@ -12,6 +12,16 @@
     <link rel="stylesheet" href="{{ asset('template/node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/node_modules/select2/dist/css/select2.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/node_modules/izitoast/dist/css/iziToast.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/fontawesome.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/datatables.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/bootstrap-datepicker.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/bootstrap-timepicker.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/summernote-bs4.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/prism.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/assets/css/chocolat.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css">
     <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('template/assets/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('template/assets/css/components.css') }}">
@@ -135,6 +145,16 @@
 							</a>
 						</li>
                         <li>
+                            <a class="nav-link" href="{{ url('souvenir/scan') }}" target="_blank">
+                                <i class="fas fa-gift"></i> <span>Scan Souvenir</span>
+                            </a>
+                        </li>
+                        <li class="{{ request()->segment(1) == 'souvenir' && request()->segment(2) == 'logs' ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ url('souvenir/logs') }}">
+                                <i class="fas fa-clipboard-list"></i> <span>Log Souvenir</span>
+                            </a>
+                        </li>
+                        <li>
 							<a class="nav-link" href="{{ url('scan/greeting') }}" target="_blank">
 								<i class="fas fa-handshake"></i> <span>Greeting</span>
 							</a>
@@ -173,12 +193,17 @@
     <!-- Template JS File -->
     <script src="{{ asset('template/assets/js/scripts.js') }}"></script>
     <script src="{{ asset('template/assets/js/custom.js') }}"></script>
+    
     <script>
         $(document).ready(function() {
             toast("{{ session()->get('success') }}", "{{ session()->get('warning') }}",
                 "{{ session()->get('error') }}");
         });
     </script>
-
+    
+    <!-- Summernote Editor -->
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+    
+    @stack('scripts')
 </body>
 </html>

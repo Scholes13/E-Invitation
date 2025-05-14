@@ -87,60 +87,63 @@ Route::middleware(['auth'])->group(function () {
 
     // Akses admin
     Route::middleware(['admin'])->group(function () {
-        Route::controller(GuestController::class)->group(function () {
-            Route::get('/guest', 'index');
-            Route::get('/guest/create', 'create');
-            Route::post('/guest/store', 'store');
-            Route::get('/guest/edit/{id}', 'edit');
-            Route::put('/guest/update/{id}', 'update');
-            Route::delete('/guest/delete', 'delete');
-        });
 
-        // Route invite
-        Route::controller(InvitationController::class)->group(function () {
-            Route::get('/invite/get-guest', 'getGuest');
-            Route::get('/invite', 'index');
-            Route::get('/invite/create', 'create');
-            Route::post('/invite/store', 'store');
-            Route::get('/invite/edit/{id}', 'edit');
-            Route::put('/invite/update/{id}', 'update');
-            Route::delete('/invite/delete', 'delete');
-            Route::get('/invite/send-email', 'sendEmail');
-            Route::get('/invite/send-whatsapp', 'sendWhatsapp');
-            Route::get('/invite/preview-email/{qrcode}', 'linkGuestEmail');
-        });
-
-        // Route arrived and arrival log
+        // Route Event
         Route::controller(EventController::class)->group(function () {
             Route::get('/event', 'index');
-            Route::put('/event/set', 'setEvent');
-            // link for user
-            Route::get('/registered/set', 'setEvent');
-
+            Route::get('/event/list', 'listEvent');
+            Route::post('/event/add', 'addEvent');
+            Route::put('/event/update/{id}', 'updateEvent');
+            Route::delete('/event/delete/{id}', 'deleteEvent');
         });
 
-        // Route setting app
+        // Setting app
         Route::controller(SettingController::class)->group(function () {
-            Route::get('setting', 'index')->name('setting.setting_app');
-            Route::put('setting/update', 'settingAppUpdate')->name('setting.settingAppUpdate');
-            Route::get('setting/email-template', 'emailTemplate')->name('setting.emailTemplate');
-            Route::put('setting/email-template/update', 'emailTemplateUpdate')->name('setting.emailTemplateUpdate');
+            Route::get('/setting', 'index');
+            Route::put('/setting', 'update');
         });
 
-        // Route user
+        // Route User
         Route::controller(UserController::class)->group(function () {
             Route::get('/user', 'index');
-            Route::get('/user/create', 'create');
-            Route::post('/user/store', 'store');
-            Route::get('/user/edit/{id}', 'edit');
-            Route::put('/user/update/{id}', 'update');
-            Route::delete('/user/delete', 'delete');
+            Route::get('/user/list', 'listUser');
+            Route::post('/user/add', 'addUser');
+            Route::put('/user/update/{id}', 'updateUser');
+            Route::delete('/user/delete/{id}', 'deleteUser');
+        });
+
+        // Route Guest
+        Route::controller(GuestController::class)->group(function () {
+            Route::get('/guest', 'index');
+            Route::get('/guest/export', 'export');
+            Route::post('/guest/import', 'import');
+            Route::get('/guest/list', 'listGuest');
+            Route::post('/guest/add', 'addGuest');
+            Route::get('/guest/info/{id}', 'infoGuest');
+            Route::put('/guest/update/{id}', 'updateGuest');
+            Route::delete('/guest/delete/{id}', 'deleteGuest');
+            Route::delete('/guest/delete-all', 'deleteAll');
+        });
+
+        // Route Invitation
+        Route::controller(InvitationController::class)->group(function () {
+            Route::get('/invitation', 'index');
+            Route::get('/invitation/list', 'listInvitation');
+            Route::get('/invitation/info/{id}', 'infoInvitation');
+            Route::get('/invitation/export', 'exportInvitation');
+            Route::post('/invitation/generate', 'generateInvitation');
+            Route::post('/invitation/blast', 'blastInvitation');
+            Route::delete('/invitation/delete-all', 'deleteAllInvitation');
+
+            Route::get('/pdf/{qrcode}', 'streamPDF');
+        });
+
+        // Blasting routes
+        Route::controller(BlastingController::class)->group(function () {
+            Route::get('/blasting', 'index');
+            Route::post('/blast-all', 'blastAll');
+            Route::post('/blast-selected', 'blastSelected');
+            Route::post('/blast-single/{id}', 'blastSingle');
         });
     });
-
-    // Route blasting
-    Route::controller(BlastingController::class)->group(function () {
-        Route::get('/blasting', 'index')->name('blasting.index');
-        Route::post('/blasting/send', 'send')->name('blasting.send');
-    })->middleware('admin');
 });

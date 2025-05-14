@@ -29,7 +29,7 @@ class ScanController extends Controller
 
     public function scanIn()
     {
-        return view("scan.scanIn");
+        return view("scan.modern-qr");
     }
 
     public function scanInProcess(Request $request)
@@ -40,6 +40,22 @@ class ScanController extends Controller
             ->first();
 
         if($invt) {
+            // Periksa jika QR sudah pernah di-scan dalam waktu dekat (10 detik)
+            $lastScanCheck = Invitation::where('id_invitation', $invt->id_invitation)
+                ->where('last_scan_in', '>=', Carbon::now()->subSeconds(10))
+                ->exists();
+            
+            if ($lastScanCheck) {
+                return response()->json([
+                    'status'    => "warning",
+                    'message'   => "QR baru saja di-scan, harap tunggu beberapa saat"
+                ]);
+            }
+            
+            // Update last_scan_in timestamp untuk mencegah scan berulang
+            Invitation::where('id_invitation', $invt->id_invitation)
+                ->update(['last_scan_in' => Carbon::now()]);
+            
             if($invt->checkin_invitation == null){
                 $status = "success";
                 $data['checkin_invitation'] = Carbon::now();
@@ -90,7 +106,7 @@ class ScanController extends Controller
 
     public function scanOut()
     {
-        return view("scan.scanOut");
+        return view("scan.modern-qr-out");
     }
     
     public function scanOutProcess(Request $request)
@@ -99,6 +115,22 @@ class ScanController extends Controller
             ->where('qrcode_invitation',  $request->qrcode)->first();
 
         if($invt){
+            // Periksa jika QR sudah pernah di-scan dalam waktu dekat (10 detik)
+            $lastScanCheck = Invitation::where('id_invitation', $invt->id_invitation)
+                ->where('last_scan_out', '>=', Carbon::now()->subSeconds(10))
+                ->exists();
+            
+            if ($lastScanCheck) {
+                return response()->json([
+                    'status'    => "warning",
+                    'message'   => "QR baru saja di-scan, harap tunggu beberapa saat"
+                ]);
+            }
+            
+            // Update last_scan_out timestamp untuk mencegah scan berulang
+            Invitation::where('id_invitation', $invt->id_invitation)
+                ->update(['last_scan_out' => Carbon::now()]);
+            
             $status = "warning";
             if($invt->checkin_invitation == null) {
                 $message = "Tamu Belum Scan In";

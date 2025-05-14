@@ -82,11 +82,6 @@
 						</li>
                         
                         @if (auth()->user()->role == 1)
-                            <li class="{{ request()->segment(1) == 'guest' ? 'active' : '' }}">
-								<a class="nav-link" href="{{ url('guest') }}">
-									<i class="fas fa-users"></i> <span>Tamu</span>
-								</a>
-							</li>
                             <li class="{{ request()->segment(1) == 'invite' ? 'active' : '' }}">
 								<a class="nav-link" href="{{ url('invite') }}">
 									<i class="fas fa-envelope"></i> <span>Undangan</span>

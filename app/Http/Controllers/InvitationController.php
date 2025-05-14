@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use App\Models\Guest;
 use App\Models\Invitation;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -29,8 +28,7 @@ class InvitationController extends Controller
             $this->qrcodeGenerator($qrcode);
         }
 
-        $invt = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-                            ->where('qrcode_invitation', $qrcode)->first();
+        $invt = Invitation::where('qrcode_invitation', $qrcode)->first();
         $event = Event::where('id_event', 1)->first();
         if($invt) {
             return view('link-guest.index', compact('invt', 'event'));
@@ -48,21 +46,9 @@ class InvitationController extends Controller
     //  Link for Guest send email
     public function linkGuestEmail($qrcode)
     {
-        $invt = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-                    ->where('qrcode_invitation', $qrcode)->first();
+        $invt = Invitation::where('qrcode_invitation', $qrcode)->first();
         $event = Event::where('id_event', 1)->first();
         return view('link-guest.sendMail', compact('invt', 'event'));
-    }
-
-    public function getGuest(Request $request)
-    {
-        if ($request->ajax()) {
-            $data = Guest::where('id_guest', $request->id_guest)->first();
-            return response()->json([
-                'status' => "success",
-                'data'  => $data
-            ]);
-        }
     }
 
     private function checkUniq($qrcode)
@@ -72,7 +58,7 @@ class InvitationController extends Controller
     }
     private function generateCode()
     {
-        $qrcode = Str::random(6);
+        $qrcode = strtoupper(substr(md5(time()), 0, 10));
         if ($this->checkUniq($qrcode)) {
             return $this->generateCode();
         }
@@ -85,7 +71,7 @@ class InvitationController extends Controller
         $result = Builder::create()
             ->writer(new PngWriter())
             ->writerOptions([])
-            ->data($code)
+            ->data(url('/invitation/' . $code))
             ->encoding(new Encoding('UTF-8'))
             ->errorCorrectionLevel(ErrorCorrectionLevel::High)
             ->size(300)
@@ -128,9 +114,6 @@ class InvitationController extends Controller
             if ($event->image_bg_event != '' && $event->image_bg_status == 1) {
                 $mail->AddEmbeddedImage(public_path('img/event/' . $event->image_bg_event), 'bg');
             }
-            // else {
-            //     $mail->AddEmbeddedImage(public_path('asset/tmp/bg.png'), 'bg'); 
-            // }
             
             if ($event->image_event != '' && $event->image_top_status == 1) {
                 $mail->AddEmbeddedImage(public_path('img/event/' . $event->image_event), 'imgtop');   
@@ -166,8 +149,7 @@ class InvitationController extends Controller
 
     public function index()
     {
-        $invitations = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-                            ->orderBy('id_invitation', 'DESC')
+        $invitations = Invitation::orderBy('id_invitation', 'DESC')
                             ->orderBy('name_guest', 'ASC')
                             ->get();
         return view('invitation.index', compact('invitations'));
@@ -175,17 +157,16 @@ class InvitationController extends Controller
 
     public function create()
     {
-        $guests = Guest::orderBy('name_guest', 'ASC')
-                    ->orderBy('id_guest', 'DESC')
-                    ->with('invitation')->get();
-        return view('invitation.create', compact('guests'));
+        return view('invitation.create');
     }
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'guest'          => 'required',
-            'type'           => 'required',
+            'name' => 'required',
+            'email' => 'required|email',
+            'phone' => 'required',
+            'type' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -196,15 +177,20 @@ class InvitationController extends Controller
         $this->qrcodeGenerator($qrcode);
 
         Invitation::create([
-            "id_guest"                      => $request->guest,
-            "qrcode_invitation"             => $qrcode,
-            "table_number_invitation"       => $request->table_number,
-            "type_invitation"               => $request->type,
-            "information_invitation"        => $request->information,
-            "link_invitation"               => '/invitation/' . $qrcode,
-            "image_qrcode_invitation"       => '/img/qrCode/' . $qrcode . ".png",
-            "id_event"                      => 1,
-            "custom_message"               => $request->custom_message,
+            "name_guest" => $request->name,
+            "email_guest" => $request->email,
+            "phone_guest" => $request->phone,
+            "address_guest" => $request->address,
+            "company_guest" => $request->company,
+            "custom_message" => $request->custom_message,
+            "created_by_guest" => "admin",
+            "qrcode_invitation" => $qrcode,
+            "table_number_invitation" => $request->table_number,
+            "type_invitation" => $request->type,
+            "information_invitation" => $request->information,
+            "link_invitation" => '/invitation/' . $qrcode,
+            "image_qrcode_invitation" => '/img/qrCode/' . $qrcode . ".png",
+            "id_event" => 1,
         ]);
 
         return redirect('/invite')->with('success', "Berhasil menambah data");
@@ -212,15 +198,17 @@ class InvitationController extends Controller
 
     public function edit($id)
     {
-        $invitation = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')->where('id_invitation', $id)->first();
+        $invitation = Invitation::where('id_invitation', $id)->first();
         return view('invitation.edit', compact('invitation'));
     }
 
-  public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
       $validator = Validator::make($request->all(), [
+        'name' => 'required',
+        'email' => 'required|email',
+        'phone' => 'required',
         'type' => 'required',
-        'custom_message' => 'nullable', // Ensure custom_message is allowed
       ]);
 
       if ($validator->fails()) {
@@ -230,19 +218,16 @@ class InvitationController extends Controller
       $invitation = Invitation::findOrFail($id);
 
       $invitation->update([
+        'name_guest' => $request->name,
+        'email_guest' => $request->email,
+        'phone_guest' => $request->phone,
+        'address_guest' => $request->address,
+        'company_guest' => $request->company,
+        'custom_message' => $request->custom_message,
         'type_invitation' => $request->type,
         'table_number_invitation' => $request->table_number,
         'information_invitation' => $request->information,
-        'custom_message' => $request->custom_message, // Update invitation's custom_message
       ]);
-
-      // Update the related guest's custom_message
-      $guest = $invitation->guest;
-        if ($guest) {
-            $guest->update([
-              'custom_message' => $request->custom_message,
-            ]);
-        }
 
       return redirect('invite')->with('success', "Berhasil mengedit data");
     }
@@ -263,7 +248,7 @@ class InvitationController extends Controller
     }
 
 
-    // Guest Register Manual
+    // Guest Register - now just direct invitation registration
     public function guestRegister()
     {
         return view('register.form');
@@ -271,39 +256,34 @@ class InvitationController extends Controller
 
     public function guestRegisterProcess(Request $request)
     {
-    $validator = Validator::make($request->all(), [
-      'name' => 'required',
-      'email' => 'required|email',
-      'phone' => 'required',
-      'company' => 'required',
-    ]);
+      $validator = Validator::make($request->all(), [
+        'name' => 'required',
+        'email' => 'required|email',
+        'phone' => 'required',
+        'company' => 'required',
+      ]);
 
-    if ($validator->fails()) {
-      return redirect()->back()->withErrors($validator)->withInput();
+      if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput();
+      }
+
+      $qrcode = $this->generateCode();
+      $this->qrcodeGenerator($qrcode);
+      
+      Invitation::create([
+        "name_guest" => $request->name,
+        "email_guest" => $request->email,
+        "phone_guest" => $request->phone,
+        "address_guest" => $request->address,
+        "company_guest" => $request->company,
+        "created_by_guest" => "register",
+        "qrcode_invitation" => $qrcode,
+        "type_invitation" => "reguler",
+        "link_invitation" => '/invitation/' . $qrcode,
+        "image_qrcode_invitation" => '/img/qrCode/' . $qrcode . ".png",
+        "id_event" => 1,
+      ]);
+
+      return redirect('/invitation/' . $qrcode)->with("register-success", "Terima kasih telah melakukan registrasi. Silahkan download QR untuk ditunjukan saat acara.");
     }
-
-     $guest = Guest::create([
-        "name_guest"            => $request->name,
-        "company_guest"             => $request->company,
-        "email_guest"           => $request->email,
-        "phone_guest"           => $request->phone,
-        "address_guest"         => $request->address,
-        "created_by_guest"      => "register",
-    ]);
-
-    $qrcode = $this->generateCode();
-    $this->qrcodeGenerator($qrcode);
-    Invitation::create([
-      "id_guest"                      => $guest->id_guest,
-      "qrcode_invitation"             => $qrcode,
-      "type_invitation"               => "reguler",
-      "link_invitation"               => '/invitation/' . $qrcode,
-      "image_qrcode_invitation"       => '/img/qrCode/' . $qrcode . ".png",
-      "id_event"                      => 1,
-    ]);
-
-    return redirect('/invitation/' . $qrcode)->with("register-success", "Terima kasih telah melakukan registrasi. Silahkan download QR untuk ditunjukan saat acara.");
-
-    }
-
 }

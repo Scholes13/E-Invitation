@@ -33,8 +33,8 @@
                         <div class="row">
                           <div class="col-md-6">
                             <label for="">Nama Tamu *</label>
-                            <input class="form-control" type="text" value="{{ $invitation->name_guest }}" readonly>
-                            @error('guest')
+                            <input class="form-control" name="name" type="text" value="{{ $invitation->name_guest }}" required>
+                            @error('name')
                               <small class="text-danger"> {{ $message }} </small>
                             @enderror
                           </div>
@@ -45,10 +45,40 @@
                         </div>
                       </div>
                       <div class="form-group">
+                        <label for="">Email *</label>
+                        <input class="form-control" name="email" value="{{ $invitation->email_guest }}" type="email" required>
+                        @error('email')
+                          <small class="text-danger"> {{ $message }} </small>
+                        @enderror
+                      </div>
+                      <div class="form-group">
+                        <label for="">Nomor Telepon *</label>
+                        <input class="form-control" name="phone" value="{{ $invitation->phone_guest }}" type="text" required>
+                        @error('phone')
+                          <small class="text-danger"> {{ $message }} </small>
+                        @enderror
+                      </div>
+                      <div class="form-group">
+                        <label for="">Alamat</label>
+                        <textarea class="form-control" name="address" rows="3">{{ $invitation->address_guest }}</textarea>
+                        @error('address')
+                          <small class="text-danger"> {{ $message }} </small>
+                        @enderror
+                      </div>
+                      <div class="form-group">
+                        <label for="">Perusahaan</label>
+                        <input class="form-control" name="company" value="{{ $invitation->company_guest }}" type="text">
+                        @error('company')
+                          <small class="text-danger"> {{ $message }} </small>
+                        @enderror
+                      </div>
+                    </div>
+                    <div class="col-xl-6">
+                      <div class="form-group">
                         <label for="">Jenis Tamu *</label>
-                        <select class="form-control" name="type" id="">
-                          <option @if ( $invitation->type_invitation == "reguler") selected @endif value="reguler">REGULER</option>
-                          <option value="vip">VIP</option>
+                        <select class="form-control" name="type" id="" required>
+                          <option @if ($invitation->type_invitation == "reguler") selected @endif value="reguler">REGULER</option>
+                          <option @if ($invitation->type_invitation == "vip") selected @endif value="vip">VIP</option>
                         </select>
                         @error('type')
                           <small class="text-danger"> {{ $message }} </small>
@@ -70,36 +100,10 @@
                       </div>
                       <div class="form-group">
                         <label for="">Pesan Khusus</label>
-                        <textarea class="form-control" name="custom_message" rows="4">{{ old('custom_message', $invitation->custom_message ?? '') }}</textarea>
+                        <textarea class="form-control" name="custom_message" rows="4">{{ $invitation->custom_message }}</textarea>
                         @error('custom_message')
                           <small class="text-danger"> {{ $message }} </small>
                         @enderror
-                      </div>
-                    </div>
-                    <div class="col-xl-6">
-                      <div class="form-group">
-                        <label for="">ID Identitas</label>
-                        <input id="nik" class="form-control" type="text" readonly value="{{ $invitation->nik_guest }}">
-                      </div>
-                      <div class="form-group">
-                        <div class="row">
-                          <div class="col-md-6">
-                            <label for="">Email</label>
-                            <input id="email" class="form-control" type="text" readonly value="{{ $invitation->email_guest }}">
-                          </div>
-                          <div class="col-md-6">
-                            <label for="">Telp</label>
-                            <input id="telp" class="form-control" type="text" readonly value="{{ $invitation->phone_guest }}">
-                          </div>
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label for="">Alamat</label>
-                        <input id="alamat" class="form-control" type="text" readonly value="{{ $invitation->address_guest }}">
-                      </div>
-                      <div class="form-group">
-                        <label for="">Keterangan Tamu</label>
-                        <input id="ket" class="form-control" type="text" readonly value="{{ $invitation->information_guest }}">
                       </div>
                     </div>
                     <div class="col">

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Guest;
 use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -34,10 +33,7 @@ class ScanController extends Controller
 
     public function scanInProcess(Request $request)
     {
-        $invt = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-            ->where('qrcode_invitation',  $request->qrcode)
-            ->select('invitation.*', 'guest.name_guest', 'guest.custom_message as guest_custom_message')
-            ->first();
+        $invt = Invitation::where('qrcode_invitation',  $request->qrcode)->first();
 
         if($invt) {
             // Periksa jika QR sudah pernah di-scan dalam waktu dekat (10 detik)
@@ -87,8 +83,8 @@ class ScanController extends Controller
                 'meja' => $invt->table_number_invitation,
             ];
 
-            if (!empty(trim($invt->guest_custom_message ?? ''))) {
-                $data['custom_message'] = $invt->guest_custom_message;
+            if (!empty(trim($invt->custom_message ?? ''))) {
+                $data['custom_message'] = $invt->custom_message;
             }
 
             $pusher->trigger('greetings', 'new-scan', $data);
@@ -111,8 +107,7 @@ class ScanController extends Controller
     
     public function scanOutProcess(Request $request)
     {
-        $invt = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-            ->where('qrcode_invitation',  $request->qrcode)->first();
+        $invt = Invitation::where('qrcode_invitation',  $request->qrcode)->first();
 
         if($invt){
             // Periksa jika QR sudah pernah di-scan dalam waktu dekat (10 detik)

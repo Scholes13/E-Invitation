@@ -12,7 +12,13 @@ class Invitation extends Model
     protected $table = "invitation";
     protected $primaryKey = 'id_invitation';
     protected $fillable = [
-        "id_guest",
+        "name_guest",
+        "email_guest",
+        "phone_guest",
+        "address_guest",
+        "company_guest",
+        "created_by_guest",
+        "custom_message",
         "qrcode_invitation",
         "table_number_invitation",
         "type_invitation",
@@ -22,16 +28,18 @@ class Invitation extends Model
         "send_email_invitation",
         "checkin_invitation",
         "checkout_invitation",
-        "custom_message",
         "email_sent",
         "email_read",
         "email_bounced",
+        "last_scan_in",
+        "last_scan_out",
     ];
 
     // public $timestamps = false;
 
-    public function guest()
+    // DoorPrize relationship moved from Guest model
+    public function doorPrizeWinner()
     {
-        return $this->belongsTo(Guest::class, 'id_guest', 'id_guest');
+        return $this->hasOne(DoorPrizeWinner::class, 'guest_id', 'id_invitation');
     }
 }

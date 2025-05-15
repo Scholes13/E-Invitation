@@ -8,21 +8,6 @@
     <div class="row">
       <div class="col-lg-3 col-md-6 col-sm-6 col-12">
         <div class="card card-statistic-1">
-          <div class="card-icon bg-dark">
-            <i class="fas fa-users"></i>
-          </div>
-          <div class="card-wrap">
-            <div class="card-header">
-              <h4>Total Tamu</h4>
-            </div>
-            <div class="card-body">
-              {{ $totalGuest }}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-        <div class="card card-statistic-1">
           <div class="card-icon bg-primary">
             <i class="fas fa-envelope"></i>
           </div>
@@ -62,6 +47,21 @@
             </div>
             <div class="card-body">
               {{ $totalGuestNotYet }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1">
+          <div class="card-icon bg-info">
+            <i class="fas fa-gift"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Souvenir Diambil</h4>
+            </div>
+            <div class="card-body">
+              {{ $totalSouvenirClaimed }}
             </div>
           </div>
         </div>

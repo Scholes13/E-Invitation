@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Exports\ArrivalLogExport;
-use App\Models\Guest;
 use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -14,8 +13,7 @@ class ArrivedController extends Controller
 
     public function index()
     {
-        $invitations = Invitation::join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-                            ->orderBy('checkout_invitation', "desc")
+        $invitations = Invitation::orderBy('checkout_invitation', "desc")
                             ->orderBy('checkin_invitation', "desc")
                             ->get();
         return view('arrived.index', compact('invitations'));
@@ -51,25 +49,30 @@ class ArrivedController extends Controller
 
         $where = [];
 
-        $type != "" ? $where['type_invitation'] = $type : "";
-        $table != "" ? $where['table_number_invitation'] = $table : "";
+        if ($type != "") {
+            $where['type_invitation'] = $type;
+        }
+        
+        if ($table != "") {
+            $where['table_number_invitation'] = $table;
+        }
 
-        $invt = Invitation::whereNotNull('invitation.checkin_invitation')
-                        ->join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
+        $invt = Invitation::whereNotNull('checkin_invitation')
                         ->where($where)
-                        ->orderBy('invitation.checkin_invitation', "DESC")
+                        ->orderBy('checkin_invitation', "DESC")
                         ->get();
 
         $paramsUrl = "?type=" . $type;
+        if ($table != "") {
+            $paramsUrl .= "&table=" . $table;
+        }
         
         return view('arrival-log.index', compact('invt', 'paramsUrl'));
     }
 
     public function arrivalLogDetail($id)
     {
-        $invt = Invitation::where('id_invitation', $id)
-                            ->join('guest', 'guest.id_guest', '=', 'invitation.id_guest')
-                            ->first();
+        $invt = Invitation::where('id_invitation', $id)->first();
         return view('arrival-log.detail', compact('invt'));
     }
 

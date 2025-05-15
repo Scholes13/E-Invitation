@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use App\Exports\SouvenirLogsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SouvenirController extends Controller
 {
@@ -23,7 +25,20 @@ class SouvenirController extends Controller
      */
     public function logs()
     {
-        $invitations = Invitation::where('souvenir_claimed', true)
+        $type = isset($_GET['type']) && $_GET['type'] != "" ? $_GET['type'] : "";
+        $table = isset($_GET['table']) && $_GET['table'] != "" ? $_GET['table'] : "";
+
+        $where = ['souvenir_claimed' => true];
+
+        if ($type != "") {
+            $where['type_invitation'] = $type;
+        }
+        
+        if ($table != "") {
+            $where['table_number_invitation'] = $table;
+        }
+
+        $invitations = Invitation::where($where)
             ->orderBy('souvenir_claimed_at', 'desc')
             ->get();
 
@@ -92,12 +107,9 @@ class SouvenirController extends Controller
      */
     public function export()
     {
-        $invitations = Invitation::where('souvenir_claimed', true)
-            ->orderBy('souvenir_claimed_at', 'desc')
-            ->get();
+        $type = isset($_GET['type']) && $_GET['type'] != "" ? $_GET['type'] : "";
+        $table = isset($_GET['table']) && $_GET['table'] != "" ? $_GET['table'] : "";
 
-        // You can implement Excel export here similar to ArrivedController export
-        // For now, just return a message
-        return redirect()->back()->with('info', 'Export feature will be implemented soon.');
+        return (new \App\Exports\SouvenirLogsExport)->type($type)->table($table)->download('Log Souvenir.xlsx', \Maatwebsite\Excel\Excel::XLSX);
     }
 }

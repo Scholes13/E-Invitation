@@ -8,15 +8,24 @@
             font-family: Arial, sans-serif;
             line-height: 1.5;
             color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
         }
     </style>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
-    <div>
-        Dear {{ $invitation->name_guest }},<br>
-        <br>
-        @if($template = \App\Models\Setting::first()->email_body_template)
-            {!! $template !!}
+<body>
+    <div class="container">
+        @if(isset($customTemplate) && !empty($customTemplate))
+            {!! $customTemplate !!}
         @else
             <p>Dear {{ $invitation->name_guest }},</p>
             <p>We are delighted to invite you to our event.</p>

@@ -10,8 +10,9 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Illuminate\Support\Carbon;
 
-class ArrivalLogExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class SouvenirLogsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     /**
     * @return \Illuminate\Support\Collection
@@ -27,11 +28,11 @@ class ArrivalLogExport implements FromCollection, WithHeadings, WithMapping, Wit
         $this->type = $type;
         return $this;
     }
+    
     public function table($table = ""){
         $this->table = $table;
         return $this;
     }
-
 
     public function collection()
     {
@@ -39,14 +40,13 @@ class ArrivalLogExport implements FromCollection, WithHeadings, WithMapping, Wit
         $this->type != "" ? $where['type_invitation'] = $this->type : "";
         $this->table != "" ? $where['table_number_invitation'] = $this->table : "";
 
-        $invt = Invitation::whereNotNull('checkin_invitation')
+        $invt = Invitation::where('souvenir_claimed', true)
             ->where($where)
-            ->orderBy('checkin_invitation', "DESC")
+            ->orderBy('souvenir_claimed_at', "DESC")
             ->get();
 
         return $invt;
     }
-
 
     public function headings(): array
     {
@@ -55,13 +55,10 @@ class ArrivalLogExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Qr Code',
             'Nama',
             'Keterangan',
-            'Telp',
-            'Email',
-            'Tautan Undangan',
             'Jenis Tamu',
             'No Meja',
-            'Datang',
-            'Pulang',
+            'Waktu Pengambilan Souvenir',
+            'Status'
         ];
     }
     
@@ -72,22 +69,18 @@ class ArrivalLogExport implements FromCollection, WithHeadings, WithMapping, Wit
             $invt->qrcode_invitation,
             $invt->name_guest,
             $invt->information_invitation,
-            $invt->phone_guest,
-            $invt->email_guest,
-            url('/invitation/'. $invt->qrcode_invitation),
             ucwords($invt->type_invitation),
             $invt->table_number_invitation,
-            $invt->checkin_invitation,
-            $invt->checkout_invitation,
+            Carbon::parse($invt->souvenir_claimed_at)->format('d M Y H:i:s'),
+            $invt->souvenir_claimed ? 'Sudah Diambil' : 'Belum Diambil'
         ];
     }
-
 
     public function styles(Worksheet $sheet)
     {
         $totalRows = $this->collection()->count();
          
-        $sheet->getStyle('A1:K1')->applyFromArray([
+        $sheet->getStyle('A1:H1')->applyFromArray([
             "fill" => [
                 'fillType' => 'solid',
                 'rotation' => 0,
@@ -101,7 +94,7 @@ class ArrivalLogExport implements FromCollection, WithHeadings, WithMapping, Wit
             ]
         ]);
 
-        $sheet->getStyle('A1:K'.$totalRows+1)->applyFromArray([
+        $sheet->getStyle('A1:H'.($totalRows+1))->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -112,9 +105,5 @@ class ArrivalLogExport implements FromCollection, WithHeadings, WithMapping, Wit
                 "horizontal" => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT
             ]
         ]);
-
-        
-        
     }
-
-}
+} 

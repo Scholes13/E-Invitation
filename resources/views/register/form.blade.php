@@ -94,7 +94,7 @@
       </div>
       
       <div class="simple-footer text-muted" style="color:#FFFF !important;">
-        © 2024 Made with love by Pramuji. Powered by YukCoding Dev. <span class="ml-1">v2.0</span>
+        © 2024 Made with love by Pramuji. Powered by YukCoding Dev. <span class="ml-1">v2.1.3</span>
       </div>
     </div>
   </div>

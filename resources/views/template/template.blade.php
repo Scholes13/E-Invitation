@@ -104,6 +104,14 @@
 							                     </a>
 							                 </li>
                         
+                        @if (mySetting()->enable_rsvp == 1)
+                        <li class="{{ request()->segment(1) == 'rsvp' ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ url('rsvp') }}">
+                                <i class="fas fa-reply"></i> <span>RSVP</span>
+                            </a>
+                        </li>
+                        @endif
+                        
                         <li class="menu-header">LOGS</li>
                         <li class="{{ request()->segment(1) == 'arrival-log' ? 'active' : '' }}">
 							<a class="nav-link" href="{{ url('arrival-log') }}">
@@ -178,7 +186,7 @@
                 <div class="footer-left">
                     © 2024 Made with love by Pramuji. Powered by YukCoding Dev.</a>
                 </div>
-                <div class="footer-right">v2.0</div>
+                <div class="footer-right">v2.1.3</div>
             </footer>
         </div>
     </div>

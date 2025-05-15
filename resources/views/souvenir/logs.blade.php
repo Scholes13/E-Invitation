@@ -18,7 +18,36 @@
                         <div class="card-header">
                             <h4>Data Pengambilan Souvenir</h4>
                             <div class="card-header-action">
-                                <a href="{{ route('souvenir.export') }}" class="btn btn-icon btn-primary">
+                                <div class="dropdown d-inline mr-2">
+                                    <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-filter"></i> Filter
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right">
+                                        <div class="dropdown-title">Filter Data</div>
+                                        <form action="{{ route('souvenir.logs') }}" method="GET">
+                                            <div class="form-group px-3">
+                                                <label>Jenis Tamu</label>
+                                                <select name="type" class="form-control">
+                                                    <option value="">Semua</option>
+                                                    <option value="vip" {{ isset($_GET['type']) && $_GET['type'] == 'vip' ? 'selected' : '' }}>VIP</option>
+                                                    <option value="regular" {{ isset($_GET['type']) && $_GET['type'] == 'regular' ? 'selected' : '' }}>Regular</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group px-3">
+                                                <label>No Meja</label>
+                                                <input type="text" class="form-control" name="table" value="{{ isset($_GET['table']) ? $_GET['table'] : '' }}" placeholder="Nomor Meja">
+                                            </div>
+                                            <div class="dropdown-divider"></div>
+                                            <button type="submit" class="dropdown-item has-icon text-primary">
+                                                <i class="fas fa-search"></i> Terapkan Filter
+                                            </button>
+                                            <a href="{{ route('souvenir.logs') }}" class="dropdown-item has-icon text-danger">
+                                                <i class="fas fa-times"></i> Reset Filter
+                                            </a>
+                                        </form>
+                                    </div>
+                                </div>
+                                <a href="{{ route('souvenir.export') }}{{ isset($_GET['type']) || isset($_GET['table']) ? '?type='.(isset($_GET['type']) ? $_GET['type'] : '').'&table='.(isset($_GET['table']) ? $_GET['table'] : '') : '' }}" class="btn btn-icon btn-primary">
                                     <i class="fas fa-file-export"></i> Export
                                 </a>
                             </div>

@@ -106,6 +106,11 @@
 
 							<a class="shadow-none btn rounded-pill btn-warning my-2"
 								href="{{ url('download/' . $invt->qrcode_invitation) }}">Download QrCode</a>
+                            
+                            @if (mySetting()->enable_rsvp == 1)
+                            <a class="shadow-none btn rounded-pill btn-info my-2 ml-2"
+                                href="{{ route('rsvp.guestForm', ['qrcode' => $invt->qrcode_invitation]) }}">Respond to RSVP</a>
+                            @endif
 						</div>
 						<!-- Akhir bagian QR Code -->
 

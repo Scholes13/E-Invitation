@@ -34,16 +34,15 @@
                             @endif
 
                             <div class="alert alert-info">
-                                <h6>Available Variables:</h6>
-                                <ul class="mb-0">
-                                    <li><code>@{{ $guest->name_guest }}</code> - Guest Name</li>
-                                    <li><code>@{{ $guest->code_guest }}</code> - Guest Code</li>
-                                    <li><code>@{{ $guest->qr_code }}</code> - QR Code</li>
-                                    <li><code>@{{ $invitation->table_number_invitation }}</code> - Table Number</li>
-                                    <li><code>@{{ $invitation->type_invitation }}</code> - Invitation Type</li>
-                                    <li><code>@{{ $invitation->information_invitation }}</code> - Additional Information</li>
-                                    <li><code>@{{ $invitation->link_invitation }}</code> - Invitation Link</li>
+                                <h5>Available Variables:</h5>
+                                <ul>
+                                    <li><code>{name}</code> - Guest Name</li>
+                                    <li><code>{qrcode}</code> - QR Code Invitation</li>
+                                    <li><code>{company}</code> - Guest Company</li>
+                                    <li><code>{table}</code> - Table Number</li>
+                                    <li><code>{type}</code> - Invitation Type</li>
                                 </ul>
+                                <p class="mb-0">Insert these variables into your email template where needed.</p>
                             </div>
 
                             <form action="{{ route('setting.emailTemplateUpdate') }}" method="POST">
@@ -52,29 +51,39 @@
 
                                 <div class="form-group">
                                     <label for="email_subject">Email Subject Template</label>
-                                    <div class="alert alert-info">
-                                        Available Variables:
-                                            `@{{ $guest->name_guest }}`,
-                                            `@{{ $guest->code_guest }}`
-                                    </div>
-                                    <input type="text" id="email_subject" name="email_subject_template" class="form-control" value="@if(old('email_subject_template')){{ old('email_subject_template') }}@elseif(isset($setting->email_subject_template)){{ $setting->email_subject_template }}@else{!! "UNDANGAN" !!}@endif">
+                                    <input type="text" id="email_subject" name="email_subject_template" 
+                                          class="form-control" 
+                                          value="@if(old('email_subject_template')){{ old('email_subject_template') }}@elseif(isset($setting->email_subject_template)){{ $setting->email_subject_template }}@else{!! "UNDANGAN untuk {name}" !!}@endif">
+                                    <small class="text-muted">You can use variables like {name} in the subject</small>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="editor">Email Template Content</label>
-                                    <textarea id="editor" name="email_template_blasting" class="form-control">@if(old('email_template_blasting')){{ old('email_template_blasting') }}@elseif(isset($setting->email_template_blasting)){{ $setting->email_template_blasting }}@else
-<p>Dear @{{ $guest->name_guest }},</p>
+                                    <label>Email Template Editor</label>
+                                    
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="insertVariable('{name}')">Insert Name</button>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="insertVariable('{qrcode}')">Insert QR Code</button>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="insertVariable('{company}')">Insert Company</button>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="insertVariable('{table}')">Insert Table</button>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="insertVariable('{type}')">Insert Type</button>
+                                    </div>
+                                    
+                                    <textarea id="email_editor" name="email_template_blasting" class="form-control">@if(old('email_template_blasting')){{ old('email_template_blasting') }}@elseif(isset($setting->email_template_blasting)){{ $setting->email_template_blasting }}@else<p>Dear {name},</p>
 
-<p>We are delighted to invite you to our wedding celebration.</p>
+<p>We are delighted to invite you to our event.</p>
 
-<p>Your personal invitation code is: @{{ $guest->code_guest }}</p>
+<p>Your personal invitation code is: {qrcode}</p>
 
-<p>Thank You</p>
-@endif</textarea>
+<p>Thank You</p>@endif</textarea>
                                 </div>
 
-                                <div class="card-footer text-right">
-                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <div class="form-group">
+                                    <label>Preview</label>
+                                    <div id="emailPreview" class="border p-3" style="min-height: 200px; background-color: white;"></div>
+                                </div>
+
+                                <div class="form-group text-right">
+                                    <button type="submit" class="btn btn-primary btn-lg">Save Changes</button>
                                 </div>
                             </form>
                         </div>
@@ -84,30 +93,63 @@
         </div>
     </section>
 </div>
-@endsection
+
+@push('styles')
+<style>
+    .tox-tinymce {
+        min-height: 400px !important;
+    }
+    #email_editor {
+        min-height: 400px;
+    }
+    .note-editor {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    .note-toolbar {
+        background-color: #f8f9fa;
+    }
+</style>
+@endpush
 
 @push('scripts')
-<script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
 <script>
-    CKEDITOR.replace('editor', {
-        height: 400,
-        removeButtons: 'Save,NewPage,Preview,Print,Templates,Cut,Copy,Paste,PasteText,PasteFromWord,Find,Replace,SelectAll,Scayt,Form,Checkbox,Radio,TextField,Textarea,Select,Button,ImageButton,HiddenField,About',
-        toolbarGroups: [
-            { name: 'document', groups: ['mode', 'document', 'doctools'] },
-            { name: 'clipboard', groups: ['clipboard', 'undo'] },
-            { name: 'editing', groups: ['find', 'selection', 'spellchecker', 'editing'] },
-            { name: 'forms', groups: ['forms'] },
-            '/',
-            { name: 'basicstyles', groups: ['basicstyles', 'cleanup'] },
-            { name: 'paragraph', groups: ['list', 'indent', 'blocks', 'align', 'bidi', 'paragraph'] },
-            { name: 'links', groups: ['links'] },
-            { name: 'insert', groups: ['insert'] },
-            '/',
-            { name: 'styles', groups: ['styles'] },
-            { name: 'colors', groups: ['colors'] },
-            { name: 'tools', groups: ['tools'] },
-            { name: 'others', groups: ['others'] }
-        ]
+    $(document).ready(function() {
+        $('#email_editor').summernote({
+            placeholder: 'Write your email template here...',
+            height: 400,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'underline', 'italic', 'clear']],
+                ['fontname', ['fontname']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ],
+            callbacks: {
+                onChange: function(contents) {
+                    updatePreview(contents);
+                }
+            }
+        });
+        
+        // Initial preview
+        setTimeout(function() {
+            updatePreview($('#email_editor').summernote('code'));
+        }, 500);
     });
+    
+    function updatePreview(contents) {
+        $('#emailPreview').html(contents);
+    }
+    
+    function insertVariable(variable) {
+        $('#email_editor').summernote('insertText', variable);
+    }
 </script>
 @endpush
+
+@endsection

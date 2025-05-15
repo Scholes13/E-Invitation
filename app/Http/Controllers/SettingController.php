@@ -14,6 +14,12 @@ class SettingController extends Controller
         return view('setting.setting_app', compact('setting'));
     }
 
+    public function update(Request $request)
+    {
+        // Call the existing settingAppUpdate method
+        return $this->settingAppUpdate($request);
+    }
+
     public function settingAppUpdate(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -51,6 +57,22 @@ class SettingController extends Controller
         }
 
         $post = $request->except(['_token', '_method', 'logo_app', 'image_bg_app']); // Use except to get all except token, method, and files
+        
+        // Convert checkbox values from 'on' to 1
+        if (isset($post['image_bg_status']) && $post['image_bg_status'] === 'on') {
+            $post['image_bg_status'] = 1;
+        } else {
+            $post['image_bg_status'] = 0;
+        }
+        
+        if (isset($post['enable_rsvp']) && $post['enable_rsvp'] === 'on') {
+            $post['enable_rsvp'] = 1;
+        } else {
+            $post['enable_rsvp'] = 0;
+        }
+        
+        // Handle any other boolean checkboxes here using the same pattern
+        
         if ($request->hasFile('logo_app')) {
             $post['logo_app'] = $imgLogoName;
         }
@@ -61,7 +83,6 @@ class SettingController extends Controller
         DB::table('setting')->where(['id' => 1])->update($post);
 
         return redirect()->back()->with("success", "Data berhasil diupdate"); // Redirect back to setting.setting_app
-
     }
 
     public function emailTemplate()
@@ -100,6 +121,59 @@ class SettingController extends Controller
         DB::table('setting')->where(['id' => 1])->update($post);
 
         return redirect()->back()->with("success", "Email Template berhasil diupdate");
+    }
+
+    // Add RSVP settings section
+    public function rsvpSettings()
+    {
+        $setting = DB::table('setting')->first();
+        return view('setting.rsvp_settings', compact('setting'));
+    }
+
+    public function rsvpSettingsUpdate(Request $request)
+    {
+        // Log all request data for debugging
+        \Log::info('RSVP Settings Update Request', [
+            'all' => $request->all(),
+            'has_enable_rsvp' => $request->has('enable_rsvp'),
+            'enable_rsvp_value' => $request->input('enable_rsvp')
+        ]);
+
+        $validator = Validator::make($request->all(), [
+            'enable_rsvp' => 'nullable',
+            'rsvp_deadline' => 'nullable|date',
+            'enable_plus_ones' => 'nullable',
+            'collect_dietary_preferences' => 'nullable',
+            'send_rsvp_reminders' => 'nullable',
+            'reminder_days_before_deadline' => 'required|integer|min:1|max:30',
+            'rsvp_email_template' => 'nullable|string',
+            'rsvp_email_subject' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Build post data with explicit checkbox handling
+        $post = [
+            'reminder_days_before_deadline' => $request->input('reminder_days_before_deadline', 3),
+            'rsvp_deadline' => $request->input('rsvp_deadline'),
+            'rsvp_email_template' => $request->input('rsvp_email_template'),
+            'rsvp_email_subject' => $request->input('rsvp_email_subject')
+        ];
+        
+        // Set boolean fields explicitly, using input() to check for presence in form data
+        $post['enable_rsvp'] = $request->input('enable_rsvp') ? 1 : 0;
+        $post['enable_plus_ones'] = $request->input('enable_plus_ones') ? 1 : 0;
+        $post['collect_dietary_preferences'] = $request->input('collect_dietary_preferences') ? 1 : 0;
+        $post['send_rsvp_reminders'] = $request->input('send_rsvp_reminders') ? 1 : 0;
+
+        // Log the actual data being saved
+        \Log::info('RSVP Settings Being Saved', $post);
+
+        DB::table('setting')->where(['id' => 1])->update($post);
+
+        return redirect()->back()->with("success", "RSVP Settings berhasil diupdate");
     }
 }
 

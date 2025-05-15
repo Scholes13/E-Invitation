@@ -30,7 +30,7 @@
                                         <th>Jenis Tamu</th>
                                         <th>No Meja</th>
                                         <th>Created by</th>
-                                        <th>Kirim Undangan</th>
+                                        <th class="text-center">Kirim Undangan</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -46,58 +46,82 @@
                                                 {!! $invitation->information_invitation != '' ? '<br>' . $invitation->information_invitation : '' !!}
                                             </td>
                                             <td>{{ ucfirst($invitation->created_by_guest) }}</td>
-                                            <td>
-                                                @if (mySetting()->send_email == 1)
-                                                    @if ($invitation->send_email_invitation != 1)
-                                                        <span class="text-warning font-italic">Waiting</span> &nbsp; 
-                                                        <a class="btn btn-sm btn-info send-email" title="Kirim Email"
+                                            <td class="text-center">
+                                                <div class="buttons">
+                                                    @if (mySetting()->send_email == 1)
+                                                        @if ($invitation->email_bounced)
+                                                            <div class="btn-block text-center mb-2">
+                                                                <span class="badge badge-danger status-badge">Bounced</span>
+                                                            </div>
+                                                        @elseif ($invitation->email_read)
+                                                            <div class="btn-block text-center mb-2">
+                                                                <span class="badge badge-info status-badge">Read</span>
+                                                            </div>
+                                                        @elseif ($invitation->email_sent)
+                                                            <div class="btn-block text-center mb-2">
+                                                                <span class="badge badge-success status-badge">Sent</span>
+                                                            </div>
+                                                        @else
+                                                            <div class="btn-block text-center mb-2">
+                                                                <span class="badge badge-warning status-badge">Waiting</span>
+                                                            </div>
+                                                        @endif
+                                                        
+                                                        <a class="btn btn-sm btn-primary mb-2 btn-block" title="Kirim Email"
                                                             data-email="{{ $invitation->email_guest }}"
                                                             data-name="{{ $invitation->name_guest }}"
                                                             href="{{ url('invite/send-email?guestQrcode=' . $invitation->qrcode_invitation . '&guestMail=' . $invitation->email_guest . '&guestName=' . $invitation->name_guest) }}">
-                                                            <i class="fa fa-envelope"></i> Send Email
-                                                        </a>
-                                                    @else
-                                                        <span class="text-success font-italic">Sent</span> &nbsp; 
-                                                        <a class="btn btn-sm btn-info send-email" title="Kirim Ulang Email"
-                                                            data-email="{{ $invitation->email_guest }}"
-                                                            data-name="{{ $invitation->name_guest }}"
-                                                            href="{{ url('invite/send-email?guestQrcode=' . $invitation->qrcode_invitation . '&guestMail=' . $invitation->email_guest . '&guestName=' . $invitation->name_guest) }}">
-                                                            <i class="fa fa-envelope"></i> Resend Email
+                                                            <i class="fa fa-envelope"></i> {{ $invitation->email_sent ? 'Resend Email' : 'Send Email' }}
                                                         </a>
                                                     @endif
-                                                @endif
-                                                @if (mySetting()->send_whatsapp == 1)
-                                                    <a class="btn btn-sm btn-info send-whatsapp" title="Kirim Whatsapp" target="_blank"
-                                                        href="{{ 'https://api.whatsapp.com/send?phone='.decode_phone($invitation->phone_guest).'&text=Link%20undangan%20:%20'.url('').$invitation->link_invitation }}">
-                                                        <i class="fab fa-whatsapp"></i> Send WA
-                                                    </a>
-                                                @endif
+                                                    
+                                                    @if (mySetting()->send_whatsapp == 1)
+                                                        <a class="btn btn-sm btn-success btn-block" title="Kirim Whatsapp" target="_blank"
+                                                            href="{{ 'https://api.whatsapp.com/send?phone='.decode_phone($invitation->phone_guest).'&text=Link%20undangan%20:%20'.url('').$invitation->link_invitation }}">
+                                                            <i class="fab fa-whatsapp"></i> Send WA
+                                                        </a>
+                                                    @endif
+                                                    
+                                                    @if (mySetting()->enable_rsvp == 1)
+                                                        <a class="btn btn-sm btn-info btn-block" title="RSVP Link" target="_blank"
+                                                            href="{{ route('rsvp.guestForm', ['qrcode' => $invitation->qrcode_invitation]) }}">
+                                                            <i class="fas fa-reply"></i> RSVP Link
+                                                        </a>
+                                                    @endif
+                                                </div>
                                             </td>
-                                            <td class="text-center">
-                                                <a target="_blank" data-toggle="tooltip" data-placement="top"
-                                                    data-original-title="Link Undangan Publik" class="btn btn-sm btn-secondary"
-                                                    href="{{ url('/invitation/' . $invitation->qrcode_invitation) }}">
-                                                    <i class="fas fa-external-link-alt"></i>
-                                                </a>
-                                                <a data-toggle="tooltip" data-placement="top" data-original-title="Edit"
-                                                    class="btn btn-sm btn-primary"
-                                                    href="{{ url('invite/edit/' . $invitation->id_invitation) }}"><i
-                                                        class="fa fa-pencil-alt"></i></a>
-                                                <form action="{{ url('invite/delete') }}" method="POST" class="d-inline"
-                                                    id="del-{{ $invitation->id_invitation }}">
-                                                    @method('DELETE')
-                                                    @csrf
-                                                    <input type="hidden" name="id_invitation"
-                                                        value="{{ $invitation->id_invitation }}">
-                                                    <input type="hidden" name="qrcode"
-                                                        value="{{ $invitation->qrcode_invitation }}">
-                                                    <button data-toggle="tooltip" data-placement="top"
-                                                        data-original-title="Hapus" class="btn btn-danger btn-sm"
-                                                        data-confirm="Hapus Data|Anda yakin hapus data ini?"
-                                                        data-confirm-yes="$('#del-{{ $invitation->id_invitation }}').submit()">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a target="_blank" data-toggle="tooltip" data-placement="top"
+                                                        data-original-title="Link Undangan Publik" class="btn btn-sm btn-secondary mb-2"
+                                                        href="{{ url('/invitation/' . $invitation->qrcode_invitation) }}">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                </div>
+                                                <div class="btn-group">
+                                                    <a data-toggle="tooltip" data-placement="top" data-original-title="Edit"
+                                                        class="btn btn-sm btn-primary mb-2"
+                                                        href="{{ url('invite/edit/' . $invitation->id_invitation) }}">
+                                                        <i class="fa fa-pencil-alt"></i>
+                                                    </a>
+                                                </div>
+                                                <div class="btn-group">
+                                                    <form action="{{ url('invite/delete') }}" method="POST" class="d-inline"
+                                                        id="del-{{ $invitation->id_invitation }}">
+                                                        @method('DELETE')
+                                                        @csrf
+                                                        <input type="hidden" name="id_invitation"
+                                                            value="{{ $invitation->id_invitation }}">
+                                                        <input type="hidden" name="qrcode"
+                                                            value="{{ $invitation->qrcode_invitation }}">
+                                                        <button data-toggle="tooltip" data-placement="top"
+                                                            data-original-title="Hapus" class="btn btn-danger btn-sm"
+                                                            data-confirm="Hapus Data|Anda yakin hapus data ini?"
+                                                            data-confirm-yes="$('#del-{{ $invitation->id_invitation }}').submit()">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -179,4 +203,52 @@
 
         })
     </script>
+
+    <style>
+        .table td {
+            vertical-align: middle;
+        }
+        .buttons {
+            display: flex;
+            flex-direction: column;
+        }
+        .btn-group {
+            margin-bottom: 5px;
+            display: block;
+        }
+        .badge {
+            font-size: 85%;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-badge {
+            width: 100%;
+            display: block;
+            padding: 8px;
+            text-align: center;
+            border-radius: 3px;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .badge-warning {
+            color: #212529;
+            background-color: #ffc107;
+        }
+        .badge-success {
+            color: #fff;
+            background-color: #28a745;
+        }
+        .badge-info {
+            color: #fff;
+            background-color: #17a2b8;
+        }
+        .badge-danger {
+            color: #fff;
+            background-color: #dc3545;
+        }
+        .btn-block {
+            width: 100%;
+            display: block;
+        }
+    </style>
 @endsection

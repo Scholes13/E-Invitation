@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Mail\InvitationMail;
-use App\Models\Guest;
 use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Response;
 
 class BlastingController extends Controller
 {
     public function index()
     {
-        $invitations = Invitation::with('guest')->get();
+        $invitations = Invitation::all();
         return view('blasting.index', compact('invitations'));
     }
 
@@ -23,15 +23,12 @@ class BlastingController extends Controller
         try {
             if ($request->has('id_invitation')) {
                 // Send to specific invitation
-                $invitation = Invitation::with('guest')->findOrFail($request->id_invitation);
+                $invitation = Invitation::findOrFail($request->id_invitation);
                 $this->sendInvitation($invitation);
                 return redirect()->back()->with('success', 'Invitation email sent successfully.');
             } else if ($request->send_type === 'unsent') {
                 // Send to all unsent invitations
-                $invitations = Invitation::with('guest')
-                    ->whereHas('guest', function($query) {
-                        $query->whereNotNull('email_guest');
-                    })
+                $invitations = Invitation::whereNotNull('email_guest')
                     ->where('email_sent', false)
                     ->get();
 
@@ -44,7 +41,7 @@ class BlastingController extends Controller
                         }
                     } catch (\Exception $e) {
                         // Log the error but continue with other invitations
-                        Log::error("Failed to send invitation to {$invitation->guest->email_guest}: " . $e->getMessage());
+                        Log::error("Failed to send invitation to {$invitation->email_guest}: " . $e->getMessage());
                     }
                 }
 
@@ -58,37 +55,65 @@ class BlastingController extends Controller
         }
     }
 
+    /**
+     * Track email opens
+     */
+    public function track($code)
+    {
+        try {
+            // Find invitation by the tracking code
+            $invitation = Invitation::where('qrcode_invitation', $code)->first();
+            
+            if ($invitation) {
+                // Update to mark email as read
+                $invitation->update([
+                    'email_read' => true
+                ]);
+            }
+            
+            // Return a 1x1 transparent pixel
+            $pixel = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+            return Response::make($pixel, 200, [
+                'Content-Type' => 'image/gif',
+                'Content-Length' => strlen($pixel),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Email tracking error: ' . $e->getMessage());
+            // Still return pixel even if there's an error to avoid breaking email client
+            $pixel = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+            return Response::make($pixel, 200, [
+                'Content-Type' => 'image/gif',
+                'Content-Length' => strlen($pixel),
+            ]);
+        }
+    }
+
     private function sendInvitation(Invitation $invitation)
     {
-        if (!$invitation->guest->email_guest) {
-            throw new \Exception("Guest {$invitation->guest->name_guest} has no email address.");
+        if (!$invitation->email_guest) {
+            throw new \Exception("Guest {$invitation->name_guest} has no email address.");
         }
 
         try {
             $setting = \App\Models\Setting::first();
             
-            // Process email subject template
-            $subject = $setting->email_subject_template ?? 'Wedding Invitation for {{ $guest->name_guest }}';
-            // Remove @ symbols from template variables before rendering
-            $subject = str_replace('@{{', '{{', $subject);
-            $subject = Blade::render($subject, [
-                'guest' => $invitation->guest,
-                'invitation' => $invitation
-            ]);
+            // Process email subject template with new variable format
+            $subject = $setting->email_subject_template ?? 'Invitation for {name}';
+            $subject = $this->replaceTemplateVariables($subject, $invitation);
 
-            // Process email body template
+            // Process email body template with new variable format
             $template = $setting->email_template_blasting;
             if ($template) {
-                // Remove @ symbols from template variables before rendering
-                $template = str_replace('@{{', '{{', $template);
-                $template = Blade::render($template, [
-                    'guest' => $invitation->guest,
-                    'invitation' => $invitation
-                ]);
+                $template = $this->replaceTemplateVariables($template, $invitation);
+                
+                // Add tracking pixel to email
+                $trackingUrl = url("/track-email/{$invitation->qrcode_invitation}");
+                $trackingPixel = '<img src="'.$trackingUrl.'" width="1" height="1" alt="" style="display:none">';
+                $template .= $trackingPixel;
             }
 
-            Mail::to($invitation->guest->email_guest)
-                ->send(new InvitationMail($invitation->guest, $invitation, $subject, $template));
+            Mail::to($invitation->email_guest)
+                ->send(new InvitationMail($invitation, $subject, $template));
 
             // Update invitation status
             $invitation->update([
@@ -105,5 +130,21 @@ class BlastingController extends Controller
             ]);
             throw $e;
         }
+    }
+    
+    /**
+     * Replace template variables with actual values
+     */
+    private function replaceTemplateVariables($content, Invitation $invitation)
+    {
+        $replacements = [
+            '{name}' => $invitation->name_guest,
+            '{qrcode}' => $invitation->qrcode_invitation,
+            '{company}' => $invitation->company_guest ?? '',
+            '{table}' => $invitation->table_number_invitation ?? '',
+            '{type}' => $invitation->type_invitation ?? '',
+        ];
+        
+        return str_replace(array_keys($replacements), array_values($replacements), $content);
     }
 }

@@ -56,12 +56,23 @@ class InvitationController extends Controller
         $cek = Invitation::where('qrcode_invitation', $qrcode)->get();
         return $cek->count() > 0 ? TRUE : FALSE;
     }
+    
     private function generateCode()
     {
-        $qrcode = strtoupper(substr(md5(time()), 0, 10));
+        // Generate a 6-character QR code with mixed case letters and numbers
+        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $qrcode = '';
+        
+        // Generate a 6-character random string
+        for ($i = 0; $i < 6; $i++) {
+            $qrcode .= $characters[random_int(0, strlen($characters) - 1)];
+        }
+        
+        // Ensure uniqueness by recursively checking if the code already exists
         if ($this->checkUniq($qrcode)) {
             return $this->generateCode();
         }
+        
         return $qrcode;
     }
 
@@ -132,12 +143,23 @@ class InvitationController extends Controller
             $mail->send();
             $mail->SmtpClose();
 
-            Invitation::where('qrcode_invitation', $guestQrcode)->update(['send_email_invitation' => 1]);
+            Invitation::where('qrcode_invitation', $guestQrcode)->update([
+                'send_email_invitation' => 1,
+                'email_sent' => true,
+                'email_read' => false,
+                'email_bounced' => false
+            ]);
 
             $status = "success";
             $message = "Berhasil mengirim email";
         } catch (Exception $e) {
             // echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            Invitation::where('qrcode_invitation', $guestQrcode)->update([
+                'send_email_invitation' => 1,
+                'email_sent' => true,
+                'email_bounced' => true
+            ]);
+            
             $status = "error";
             $message = "Gagal mengirim ke email";
         }

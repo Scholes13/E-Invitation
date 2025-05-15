@@ -12,6 +12,7 @@ use App\Http\Controllers\SouvenirController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DoorprizeController;
 use App\Http\Controllers\BlastingController;
+use App\Http\Controllers\RsvpController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,7 +31,12 @@ Route::get('/', function () {
 });
 
 Route::get('/doorprize', [DoorprizeController::class, 'index'])->name('doorprize.index');
+Route::get('/doorprize/wheel', [DoorprizeController::class, 'spinWheel'])->name('doorprize.wheel');
+Route::get('/doorprize/slots', [DoorprizeController::class, 'slotMachine'])->name('doorprize.slots');
+Route::get('/doorprize/random', [DoorprizeController::class, 'randomPick'])->name('doorprize.random');
 Route::post('/doorprize/draw', [DoorprizeController::class, 'drawWinner'])->name('doorprize.draw');
+Route::get('/doorprize/winners', [DoorprizeController::class, 'getWinners'])->name('doorprize.winners');
+Route::post('/doorprize/reset', [DoorprizeController::class, 'resetWinners'])->name('doorprize.reset');
 
 // Route login
 Route::get('login', [AuthController::class, "login"])->middleware('guest')->name('login');
@@ -91,6 +97,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/change-password-process', 'changePasswordProcess');
     });
 
+    // RSVP Management (Admin)
+    Route::controller(RsvpController::class)->group(function () {
+        Route::get('/rsvp', 'index')->name('rsvp.index');
+        Route::get('/rsvp/settings', 'settings')->name('rsvp.settings');
+        Route::post('/rsvp/settings', 'updateSettings')->name('rsvp.updateSettings');
+        Route::post('/rsvp/send-reminders', 'sendReminders')->name('rsvp.sendReminders');
+    });
+
     // ===================================================================
 
     // Akses admin
@@ -108,7 +122,9 @@ Route::middleware(['auth'])->group(function () {
         // Setting app
         Route::controller(SettingController::class)->group(function () {
             Route::get('/setting', 'index');
-            Route::put('/setting', 'update');
+            Route::put('/setting', 'update')->name('setting.settingAppUpdate');
+            Route::get('/setting/rsvp', 'rsvpSettings')->name('setting.rsvpSettings');
+            Route::put('/setting/rsvp-update', 'rsvpSettingsUpdate')->name('setting.rsvpSettingsUpdate');
         });
 
         // Route User
@@ -148,11 +164,18 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/blasting/send', 'send')->name('blasting.send');
             Route::get('/track-email/{code}', 'track')->name('blasting.track');
         });
-        
+
         // Email template settings
         Route::controller(SettingController::class)->group(function () {
             Route::get('/setting/email-template', 'emailTemplate')->name('setting.emailTemplate');
             Route::put('/setting/email-template-update', 'emailTemplateUpdate')->name('setting.emailTemplateUpdate');
         });
+        });
     });
+
+// Guest RSVP Routes (Public)
+Route::controller(RsvpController::class)->group(function () {
+    Route::get('/rsvp/guest/{qrcode}', 'guestRsvpForm')->name('rsvp.guestForm');
+    Route::post('/rsvp/guest/{qrcode}', 'processRsvp')->name('rsvp.process');
+    Route::get('/rsvp/thank-you/{qrcode}', 'thankYou')->name('rsvp.thank-you');
 });

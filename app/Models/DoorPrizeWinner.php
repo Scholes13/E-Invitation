@@ -10,10 +10,10 @@ class DoorprizeWinner extends Model
     use HasFactory;
 
     protected $table = 'doorprizewinners'; // Match the table name in your database
-    protected $fillable = ['id_guest'];
+    protected $fillable = ['guest_id', 'name', 'email'];
 
-    public function guest()
+    public function invitation()
     {
-        return $this->belongsTo(Guest::class, 'id_guest', 'id_guest');
+        return $this->belongsTo(Invitation::class, 'guest_id', 'id_invitation');
     }
 }

@@ -72,6 +72,17 @@
                                     </div>
                                 </div>
 
+                                <div class="form-group">
+                                    <label>RSVP Settings</label>
+                                    <div class="d-flex">
+                                        <div class="custom-control custom-switch mr-3">
+                                            <input type="checkbox" class="custom-control-input" name="enable_rsvp" id="enable_rsvp" {{ $setting->enable_rsvp ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="enable_rsvp">Enable RSVP Feature</label>
+                                        </div>
+                                        <a href="{{ route('setting.rsvpSettings') }}" class="btn btn-sm btn-primary">Manage RSVP Settings</a>
+                                    </div>
+                                </div>
+
                                 <div class="card-footer text-right">
                                     <button type="submit" class="btn btn-primary">Save Changes</button>
                                 </div>

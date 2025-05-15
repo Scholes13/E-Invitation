@@ -18,13 +18,26 @@ use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
 class InvitationController extends Controller
 {
 
     //  Link for Guest access
     public function linkGuest($qrcode)
     {
-        if(!file_exists(public_path('/img/qrCode/'. $qrcode .'.png'))){
+        // Check if custom QR feature is enabled
+        $customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
+        
+        // Always regenerate QR code if custom QR is enabled and a default template exists
+        if ($customQrEnabled) {
+            $defaultTemplate = \App\Models\CustomQrTemplate::where('is_default', true)->first();
+            if ($defaultTemplate) {
+                $this->qrcodeGenerator($qrcode);
+            }
+        } 
+        // When custom QR is disabled, always regenerate standard QR code to remove any custom styling
+        else {
             $this->qrcodeGenerator($qrcode);
         }
 
@@ -32,7 +45,6 @@ class InvitationController extends Controller
         $event = Event::where('id_event', 1)->first();
         if($invt) {
             return view('link-guest.index', compact('invt', 'event'));
-            // return view('link-guest.sendMail', compact('invt', 'event'));
         } else {
             return view('link-guest.notFound');
         }
@@ -40,6 +52,24 @@ class InvitationController extends Controller
     }
     public function downloadQrCode($code)
     {
+        // Check if custom QR feature is enabled
+        $customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
+        $invitation = Invitation::where('qrcode_invitation', $code)->first();
+        
+        // Only use custom QR path if feature is enabled
+        if ($customQrEnabled && $invitation && $invitation->custom_qr_path) {
+            // Convert storage path to file system path
+            $path = storage_path('app/' . $invitation->custom_qr_path);
+            
+            // If file doesn't exist in storage, fall back to public path
+            if (!file_exists($path)) {
+                return response()->download(public_path('img/qrCode/'. $code. ".png"));
+            }
+            
+            return response()->download($path, $code . '.png');
+        }
+        
+        // Fallback to standard path
         return response()->download(public_path('img/qrCode/'. $code. ".png"));
     }
 
@@ -78,11 +108,83 @@ class InvitationController extends Controller
 
     public function qrcodeGenerator($code)
     {
+        // Ensure directories exist
         File::ensureDirectoryExists(public_path('img/qrCode'));
+        File::ensureDirectoryExists(storage_path('app/public/img/qrCode'));
+        
+        // Get invitation record
+        $invitation = Invitation::where('qrcode_invitation', $code)->first();
+        if (!$invitation) {
+            \Log::warning("No invitation found for code: $code");
+        }
+        
+        // Check if a default template exists AND custom QR feature is enabled
+        $customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
+        $defaultTemplate = $customQrEnabled ? \App\Models\CustomQrTemplate::where('is_default', true)->first() : null;
+        
+        if ($customQrEnabled && $defaultTemplate) {
+            // Generate QR with default template - use just the code, not the full URL
+            $qrData = $code;
+            
+            // Create QR code with appropriate error correction level
+            $qrCode = \Endroid\QrCode\QrCode::create($qrData)
+                ->setEncoding(new \Endroid\QrCode\Encoding\Encoding('UTF-8'))
+                ->setErrorCorrectionLevel(\Endroid\QrCode\ErrorCorrectionLevel::High)
+                ->setSize(300)
+                ->setMargin(10);
+            
+            // Set foreground and background colors
+            $fgColor = json_decode($defaultTemplate->fg_color, true);
+            $bgColor = json_decode($defaultTemplate->bg_color, true);
+            
+            if ($fgColor && is_array($fgColor)) {
+                $qrCode->setForegroundColor(new \Endroid\QrCode\Color\Color($fgColor['r'], $fgColor['g'], $fgColor['b']));
+            }
+            
+            if ($bgColor && is_array($bgColor)) {
+                $qrCode->setBackgroundColor(new \Endroid\QrCode\Color\Color($bgColor['r'], $bgColor['g'], $bgColor['b']));
+            }
+            
+            // Create writer
+            $writer = new \Endroid\QrCode\Writer\PngWriter();
+            
+            // Add logo if template has one
+            $result = null;
+            if ($defaultTemplate->logo_path && Storage::exists($defaultTemplate->logo_path)) {
+                $logoPath = Storage::path($defaultTemplate->logo_path);
+                $logo = \Endroid\QrCode\Logo\Logo::create($logoPath)
+                    ->setResizeToWidth(isset($defaultTemplate->logo_size) ? (int)$defaultTemplate->logo_size : 80);
+                
+                $result = $writer->write($qrCode, $logo);
+            } else {
+                $result = $writer->write($qrCode);
+            }
+            
+            // Define paths
+            $publicPath = '/img/qrCode/' . $code . '.png';
+            $storagePath = 'public/img/qrCode/' . $code . '.png';
+            
+            // Save to both public and storage
+            file_put_contents(public_path($publicPath), $result->getString());
+            \Illuminate\Support\Facades\Storage::put($storagePath, $result->getString());
+            
+            // Update invitation with template info
+            if ($invitation) {
+                $invitation->update([
+                    'custom_qr_template_id' => $defaultTemplate->id,
+                    'custom_qr_path' => $storagePath
+                ]);
+                \Log::info("Updated invitation #$invitation->id_invitation with custom QR template #$defaultTemplate->id");
+            }
+            
+            return; // Exit the method after generating custom QR
+        }
+        
+        // Use standard QR generation if no default template or custom QR is disabled
         $result = Builder::create()
             ->writer(new PngWriter())
             ->writerOptions([])
-            ->data(url('/invitation/' . $code))
+            ->data($code) // Use just the code, not the full URL
             ->encoding(new Encoding('UTF-8'))
             ->errorCorrectionLevel(ErrorCorrectionLevel::High)
             ->size(300)
@@ -174,7 +276,14 @@ class InvitationController extends Controller
         $invitations = Invitation::orderBy('id_invitation', 'DESC')
                             ->orderBy('name_guest', 'ASC')
                             ->get();
-        return view('invitation.index', compact('invitations'));
+                            
+        // Add custom QR templates if the feature is enabled
+        $customQrTemplates = [];
+        if (isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1) {
+            $customQrTemplates = \App\Models\CustomQrTemplate::all();
+        }
+        
+        return view('invitation.index', compact('invitations', 'customQrTemplates'));
     }
 
     public function create()

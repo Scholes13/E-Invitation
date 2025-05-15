@@ -32,6 +32,8 @@ class Invitation extends Model
         "information_invitation",
         "link_invitation",
         "image_qrcode_invitation",
+        "custom_qr_path",
+        "custom_qr_template_id",
         "send_email_invitation",
         "checkin_invitation",
         "checkout_invitation",
@@ -48,5 +50,10 @@ class Invitation extends Model
     public function doorPrizeWinner()
     {
         return $this->hasOne(DoorPrizeWinner::class, 'guest_id', 'id_invitation');
+    }
+
+    public function customQrTemplate()
+    {
+        return $this->belongsTo(CustomQrTemplate::class, 'custom_qr_template_id');
     }
 }

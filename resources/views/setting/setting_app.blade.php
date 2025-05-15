@@ -83,6 +83,17 @@
                                     </div>
                                 </div>
 
+                                <div class="form-group">
+                                    <label>Custom QR Design Settings</label>
+                                    <div class="d-flex">
+                                        <div class="custom-control custom-switch mr-3">
+                                            <input type="checkbox" class="custom-control-input" name="enable_custom_qr" id="enable_custom_qr" {{ isset($setting->enable_custom_qr) && $setting->enable_custom_qr ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="enable_custom_qr">Enable Custom QR Design Feature</label>
+                                        </div>
+                                        <a href="{{ url('custom-qr') }}" class="btn btn-sm btn-primary">Manage Custom QR Templates</a>
+                                    </div>
+                                </div>
+
                                 <div class="card-footer text-right">
                                     <button type="submit" class="btn btn-primary">Save Changes</button>
                                 </div>

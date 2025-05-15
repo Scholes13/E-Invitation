@@ -94,9 +94,23 @@
 
 						<!-- Bagian QR Code yang ingin dihilangkan -->
 						<div class="text-center mt-4">
-							 <img src="{{ asset('/img/qrCode/' . $invt->qrcode_invitation . '.png') }}" class="rounded" style="width: 150px" alt=""> 
+							@php
+								$qrImagePath = '';
+								$customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
+								$templateId = $customQrEnabled ? ($invt->custom_qr_template_id ?? null) : null;
+								$qrData = $invt->qrcode_invitation;
+								
+								// Only use custom QR path if feature is enabled
+								if ($customQrEnabled && $invt->custom_qr_path) {
+									$qrImagePath = str_replace('public/', 'storage/', $invt->custom_qr_path);
+								} else {
+									$qrImagePath = '/img/qrCode/' . $invt->qrcode_invitation . '.png';
+								}
+							@endphp
+							
+							<div id="qrcode-container" style="width: 300px; height: 300px; margin: 0 auto;"></div>
 							<h5 class="mt-3">
-								<div id="qrcode" class="h6" style="cursor:pointer">
+								<div id="qrcode-id" class="h6" style="cursor:pointer">
 									<span>
 										{{ $invt->qrcode_invitation }}
 									</span>
@@ -150,11 +164,14 @@
     <script src="{{ asset('plugin/sweetalert2/dist/sweetalert2.min.js') }}"></script>
     <!-- Template JS File -->
     <script src="{{ asset('template/assets/js/scripts.js') }}"></script>
+    
+    <!-- QR Code Styling library -->
+    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
 
     <script>
         $(document).ready(function() {
-            $('#qrcode').click(function() {
-                let textToCopy = $('#qrcode span').text();
+            $('#qrcode-id').click(function() {
+                let textToCopy = $('#qrcode-id span').text();
                 let tempTextarea = $('<textarea>');
                 $('body').append(tempTextarea);
                 tempTextarea.val(textToCopy).select();
@@ -175,6 +192,54 @@
                     icon: "success",
                     confirmButtonColor: "#6F4E37",
                 });
+            }
+            
+            // Initialize QR code with styling
+            const templateId = {{ $templateId ?? 'null' }};
+            const qrData = "{{ $qrData }}";
+            const customQrEnabled = {{ $customQrEnabled ? 'true' : 'false' }};
+            
+            if (customQrEnabled && templateId) {
+                // Fetch template settings from API
+                fetch(`/api/custom-qr/${templateId}/preview?data=${encodeURIComponent(qrData)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.template && data.template.settings) {
+                            // Create QR with the template settings
+                            const settings = data.template.settings;
+                            
+                            // Match Endroid dimensions - use 300x300 size
+                            settings.width = 300;
+                            settings.height = 300;
+                            
+                            // Match Endroid margin of 10
+                            settings.margin = 10;
+                            
+                            // Ensure errorCorrectionLevel is set to H like Endroid
+                            if (settings.qrOptions) {
+                                settings.qrOptions.errorCorrectionLevel = 'H';
+                            }
+                            
+                            const qrCode = new QRCodeStyling(settings);
+                            qrCode.append(document.getElementById("qrcode-container"));
+                        } else {
+                            // Fallback - show the static image if API fails
+                            fallbackToStaticImage();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching QR template:', error);
+                        fallbackToStaticImage();
+                    });
+            } else {
+                fallbackToStaticImage();
+            }
+            
+            function fallbackToStaticImage() {
+                // Create fallback image
+                const qrImagePath = "{{ asset($qrImagePath) }}";
+                const container = document.getElementById("qrcode-container");
+                container.innerHTML = `<img src="${qrImagePath}" class="rounded" style="width: 100%; height: 100%; object-fit: contain;" alt="QR Code">`;
             }
         });
     </script>

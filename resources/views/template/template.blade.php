@@ -4,25 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ mySetting()->name_app != '' ? mySetting()->name_app : env('APP_NAME') }}</title>
-    <!-- General CSS Files -->
-    <link rel="stylesheet" href="{{ asset('template/node_modules/bootstrap/dist/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/node_modules/@fortawesome/fontawesome-free/css/all.css') }}">
-    <!-- CSS Libraries -->
-    <link rel="stylesheet" href="{{ asset('template/node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/node_modules/select2/dist/css/select2.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/node_modules/izitoast/dist/css/iziToast.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/fontawesome.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/datatables.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/bootstrap-datepicker.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/bootstrap-timepicker.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/summernote-bs4.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/prism.css') }}">
-    <link rel="stylesheet" href="{{ asset('template/assets/css/chocolat.css') }}">
+    
+    <!-- General CSS Files - Using CDNs for reliability -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <!-- CSS Libraries - Using CDNs -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-timepicker/0.5.2/css/bootstrap-timepicker.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css">
-    <!-- Template CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chocolat@1.0.0/dist/css/chocolat.min.css">
+    
+    <!-- Template CSS - Use local files that we know exist -->
     <link rel="stylesheet" href="{{ asset('template/assets/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('template/assets/css/components.css') }}">
     <link rel="stylesheet" href="{{ asset('template/assets/css/custom.css') }}">
@@ -30,7 +29,11 @@
 </head>
 
 <body>
-    <script src="{{ asset('template/node_modules/jquery/dist/jquery.min.js') }}"></script>
+    <!-- Include jQuery first - from CDN with local fallback -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        window.jQuery || document.write('<script src="{{ asset("template/node_modules/jquery/dist/jquery.min.js") }}"><\/script>');
+    </script>
 
     <div id="app">
         <div class="main-wrapper">
@@ -108,6 +111,14 @@
                         <li class="{{ request()->segment(1) == 'rsvp' ? 'active' : '' }}">
                             <a class="nav-link" href="{{ url('rsvp') }}">
                                 <i class="fas fa-reply"></i> <span>RSVP</span>
+                            </a>
+                        </li>
+                        @endif
+                        
+                        @if (isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1)
+                        <li class="{{ request()->segment(1) == 'custom-qr' ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ url('custom-qr') }}">
+                                <i class="fas fa-qrcode"></i> <span>Custom QR Design</span>
                             </a>
                         </li>
                         @endif
@@ -191,16 +202,21 @@
         </div>
     </div>
 
-    <!-- General JS Scripts -->
-    <script src="{{ asset('template/node_modules/popper.js/dist/umd/popper.min.js') }}"></script>
-    <script src="{{ asset('template/node_modules/bootstrap/dist/js/bootstrap.min.js') }}"></script>
-    <script src="{{ asset('template/node_modules/jquery.nicescroll/dist/jquery.nicescroll.min.js') }}"></script>
-    <script src="{{ asset('template/node_modules/datatables/media/js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('template/node_modules/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <!-- General JS Scripts - Using CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.nicescroll/3.7.6/jquery.nicescroll.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="{{ asset('template/assets/js/stisla.js') }}"></script>
-    <!-- JS Libraies -->
-    <script src="{{ asset('template/node_modules/izitoast/dist/js/iziToast.min.js') }}"></script>
-    <script src="{{ asset('template/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+    
+    <!-- JS Libraries - Using CDNs -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+    
     <!-- Template JS File -->
     <script src="{{ asset('template/assets/js/scripts.js') }}"></script>
     <script src="{{ asset('template/assets/js/custom.js') }}"></script>
@@ -211,9 +227,6 @@
                 "{{ session()->get('error') }}");
         });
     </script>
-    
-    <!-- Summernote Editor -->
-    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
     
     @stack('scripts')
 </body>

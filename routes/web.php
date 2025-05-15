@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DoorprizeController;
 use App\Http\Controllers\BlastingController;
 use App\Http\Controllers\RsvpController;
+use App\Http\Controllers\CustomQrController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,7 @@ Route::controller(InvitationController::class)->group(function () {
 
 Route::controller(ScanController::class)->group(function () {
     Route::get('/scan/greeting', 'greeting');
+    Route::get('/scan/verify/{code}', 'scanVerify');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -170,8 +172,30 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/setting/email-template', 'emailTemplate')->name('setting.emailTemplate');
             Route::put('/setting/email-template-update', 'emailTemplateUpdate')->name('setting.emailTemplateUpdate');
         });
+    });
+
+    // Custom QR Design Feature Routes
+    Route::middleware(['auth', 'custom.qr'])->group(function () {
+        Route::prefix('custom-qr')->group(function () {
+            Route::get('/', 'App\Http\Controllers\CustomQrController@index')->name('custom-qr.index');
+            Route::get('/create', 'App\Http\Controllers\CustomQrController@unifiedQrEditor')->name('custom-qr.create');
+            Route::post('/', 'App\Http\Controllers\CustomQrController@store')->name('custom-qr.store');
+            Route::get('/{id}/edit', 'App\Http\Controllers\CustomQrController@unifiedQrEditor')->name('custom-qr.edit');
+            Route::put('/{id}', 'App\Http\Controllers\CustomQrController@update')->name('custom-qr.update');
+            Route::delete('/{id}', 'App\Http\Controllers\CustomQrController@destroy')->name('custom-qr.destroy');
+            Route::get('/{id}/preview', 'App\Http\Controllers\CustomQrController@preview')->name('custom-qr.preview');
+            Route::get('/{id}/api-preview', 'App\Http\Controllers\CustomQrController@apiPreview')->name('custom-qr.apiPreview');
+            Route::post('/generate/{guestId}/{templateId}', 'App\Http\Controllers\CustomQrController@generateQrForGuest')->name('custom-qr.generate');
+            Route::post('/{id}/set-default', 'App\Http\Controllers\CustomQrController@setAsDefault')->name('custom-qr.set-default');
+            Route::get('/regenerate-all', 'App\Http\Controllers\CustomQrController@regenerateAllQrCodes')->name('custom-qr.regenerate-all');
+            
+            // Remove any remaining old editor routes that could cause confusion
+            
+            // Route for API calls to save templates from the editor
+            Route::post('/save-template', 'App\Http\Controllers\CustomQrController@saveTemplateFromEditor')->name('custom-qr.saveTemplate');
         });
     });
+});
 
 // Guest RSVP Routes (Public)
 Route::controller(RsvpController::class)->group(function () {

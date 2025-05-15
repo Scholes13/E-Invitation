@@ -71,6 +71,12 @@ class SettingController extends Controller
             $post['enable_rsvp'] = 0;
         }
         
+        if (isset($post['enable_custom_qr']) && $post['enable_custom_qr'] === 'on') {
+            $post['enable_custom_qr'] = 1;
+        } else {
+            $post['enable_custom_qr'] = 0;
+        }
+        
         // Handle any other boolean checkboxes here using the same pattern
         
         if ($request->hasFile('logo_app')) {

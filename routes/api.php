@@ -21,3 +21,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Doorprize API endpoints
 Route::get('/doorprize/participants', [DoorprizeController::class, 'getParticipants']);
+
+// QR Code preview API endpoint
+Route::get('/custom-qr/{id}/preview', 'App\Http\Controllers\CustomQrController@apiPreview');

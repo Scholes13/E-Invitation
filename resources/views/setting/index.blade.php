@@ -20,6 +20,20 @@
    </div>
 </div>
 
+<div class="form-group">
+    <div class="custom-control custom-checkbox">
+        <input type="checkbox" name="enable_rsvp" class="custom-control-input" id="enable_rsvp" {{ mySetting()->enable_rsvp == 1 ? 'checked' : '' }}>
+        <label class="custom-control-label" for="enable_rsvp">Enable RSVP Feature</label>
+    </div>
+</div>
+
+<div class="form-group">
+    <div class="custom-control custom-checkbox">
+        <input type="checkbox" name="enable_custom_qr" class="custom-control-input" id="enable_custom_qr" {{ mySetting()->enable_custom_qr == 1 ? 'checked' : '' }}>
+        <label class="custom-control-label" for="enable_custom_qr">Enable Custom QR Design Feature</label>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
    const spinningName = document.getElementById('spinning-name');

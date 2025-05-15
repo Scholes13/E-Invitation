@@ -27,5 +27,6 @@ class Setting extends Model
         'rsvp_email_subject',
         'email_template_blasting', // Added email template field
         'whatsapp_template_blasting', // Added whatsapp template field
+        'enable_custom_qr',
     ];
 }

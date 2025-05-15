@@ -15,9 +15,15 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <a class="btn btn-sm btn-primary" href="{{ url('invite/create') }}">
-                            <i class="fa fa-plus"></i> Tambah Undangan
-                        </a>
+                        <h4>Undangan Tamu</h4>
+                        <div class="card-header-action">
+                            <a class="btn btn-sm btn-primary" href="{{ url('invite/create') }}"><i class="fa fa-plus"></i> Tambah</a>
+                            @if(isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1)
+                            <a class="btn btn-sm btn-warning" href="{{ url('custom-qr/regenerate-all') }}" onclick="return confirm('Ini akan menghasilkan ulang semua kode QR dengan template default. Lanjutkan?')">
+                                <i class="fa fa-sync"></i> Regenerate QR Codes
+                            </a>
+                            @endif
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -86,6 +92,13 @@
                                                         <a class="btn btn-sm btn-info btn-block" title="RSVP Link" target="_blank"
                                                             href="{{ route('rsvp.guestForm', ['qrcode' => $invitation->qrcode_invitation]) }}">
                                                             <i class="fas fa-reply"></i> RSVP Link
+                                                        </a>
+                                                    @endif
+
+                                                    @if(isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1 && count($customQrTemplates) > 0)
+                                                        <a class="btn btn-sm btn-secondary btn-block" title="Custom QR" href="#" 
+                                                            onclick="showCustomQrModal({{ $invitation->id_invitation }})">
+                                                            <i class="fas fa-qrcode"></i> Custom QR
                                                         </a>
                                                     @endif
                                                 </div>
@@ -182,9 +195,45 @@
         </div>
     </div>
 
-    <script>
-        $(document).ready(function() {
+    <!-- Modal untuk Custom QR -->
+    <div class="modal fade" id="customQrModal" tabindex="-1" role="dialog" aria-labelledby="customQrModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customQrModalLabel">Generate Custom QR Code</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="customQrForm" method="POST" action="">
+                        @csrf
+                        <div class="form-group">
+                            <label for="template_id">Select Template</label>
+                            <select class="form-control" id="template_id" name="template_id" required>
+                                @foreach($customQrTemplates as $template)
+                                    <option value="{{ $template->id }}">{{ $template->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="generateCustomQr">Generate</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script>
+        // Global function for custom QR modal
+        function showCustomQrModal(invitationId) {
+            $('#customQrForm').attr('action', '{{ url("custom-qr/generate") }}/' + invitationId + '/' + $('#template_id').val());
+            $('#customQrModal').modal('show');
+        }
+        
+        $(document).ready(function() {
             $(".send-email").click(function(e) {
                 e.preventDefault()
                 let href = $(this).prop("href")
@@ -200,7 +249,15 @@
                 $("#loading").modal('show');
                 window.location.href = $("#data-href").val()
             })
-
+            
+            $('#generateCustomQr').click(function() {
+                $('#customQrForm').submit();
+            });
+            
+            $('#template_id').change(function() {
+                const invitationId = $('#customQrForm').attr('action').split('/')[4];
+                $('#customQrForm').attr('action', '{{ url("custom-qr/generate") }}/' + invitationId + '/' + $(this).val());
+            });
         })
     </script>
 

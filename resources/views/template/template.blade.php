@@ -197,7 +197,7 @@
                 <div class="footer-left">
                     © 2024 Made with love by Pramuji. Powered by YukCoding Dev.</a>
                 </div>
-                <div class="footer-right">v2.1.3</div>
+                <div class="footer-right">v2.2.1</div>
             </footer>
         </div>
     </div>

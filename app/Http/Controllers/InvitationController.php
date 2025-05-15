@@ -31,9 +31,9 @@ class InvitationController extends Controller
         
         // Always regenerate QR code if custom QR is enabled and a default template exists
         if ($customQrEnabled) {
-            $defaultTemplate = \App\Models\CustomQrTemplate::where('is_default', true)->first();
-            if ($defaultTemplate) {
-                $this->qrcodeGenerator($qrcode);
+        $defaultTemplate = \App\Models\CustomQrTemplate::where('is_default', true)->first();
+        if ($defaultTemplate) {
+            $this->qrcodeGenerator($qrcode);
             }
         } 
         // When custom QR is disabled, always regenerate standard QR code to remove any custom styling

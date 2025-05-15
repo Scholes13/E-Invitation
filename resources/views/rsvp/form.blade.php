@@ -1,6 +1,6 @@
 <!--
  * RSVP Form Template
- * Version: 2.1.3
+ * Version: 2.2.1
  * Last Updated: {{ date('Y-m-d') }}
  * 
  * Modern and responsive RSVP form with automatic guest management

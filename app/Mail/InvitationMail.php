@@ -4,28 +4,45 @@ namespace App\Mail;
 
 use App\Models\Invitation;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class InvitationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * The invitation instance.
+     *
+     * @var \App\Models\Invitation
+     */
     public $invitation;
-    public $subject;
-    public $template;
+    
+    /**
+     * The email subject.
+     *
+     * @var string|null
+     */
+    public $emailSubject;
+    
+    /**
+     * The custom email template.
+     *
+     * @var string|null
+     */
+    public $customTemplate;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Invitation $invitation, $subject = null, $template = null)
+    public function __construct(Invitation $invitation, ?string $subject = null, ?string $template = null)
     {
         $this->invitation = $invitation;
-        $this->subject = $subject;
-        $this->template = $template;
+        $this->emailSubject = $subject;
+        $this->customTemplate = $template;
     }
 
     /**
@@ -34,7 +51,22 @@ class InvitationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->subject ?? 'UNDANGAN',
+            subject: $this->emailSubject ?? 'UNDANGAN',
+        );
+    }
+
+    /**
+     * Get the message headers.
+     */
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'X-Invitation-Code' => $this->invitation->qrcode_invitation,
+                'X-Priority' => '1',
+                'X-MSMail-Priority' => 'High',
+                'Importance' => 'High',
+            ],
         );
     }
 
@@ -44,11 +76,12 @@ class InvitationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.invitation',
+            view: $this->customTemplate ? 'emails.invitation' : 'emails.simple-invitation',
             with: [
                 'invitation' => $this->invitation,
-                'customTemplate' => $this->template
-            ]
+                'customTemplate' => $this->customTemplate,
+                'companyName' => env('MAIL_FROM_NAME', 'Werkudara Group')
+            ],
         );
     }
 

@@ -19,27 +19,17 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class InvitationController extends Controller
 {
 
     //  Link for Guest access
-    public function linkGuest($qrcode)
+    public function linkGuest($qrcode, Request $request)
     {
-        // Check if custom QR feature is enabled
-        $customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
-        
-        // Always regenerate QR code if custom QR is enabled and a default template exists
-        if ($customQrEnabled) {
-        $defaultTemplate = \App\Models\CustomQrTemplate::where('is_default', true)->first();
-        if ($defaultTemplate) {
-            $this->qrcodeGenerator($qrcode);
-            }
-        } 
-        // When custom QR is disabled, always regenerate standard QR code to remove any custom styling
-        else {
-            $this->qrcodeGenerator($qrcode);
-        }
+        // Generate QR code
+        \Log::info("Generating QR code for link guest page: {$qrcode}");
+        $this->qrcodeGenerator($qrcode, true);
 
         $invt = Invitation::where('qrcode_invitation', $qrcode)->first();
         $event = Event::where('id_event', 1)->first();
@@ -48,37 +38,87 @@ class InvitationController extends Controller
         } else {
             return view('link-guest.notFound');
         }
-        
     }
+
+    /**
+     * Get standardized QR code path - using public directory only
+     * 
+     * @param string $code QR code
+     * @param bool $fullPath Return full system path if true, relative path if false
+     * @return string Path to QR code
+     */
+    private function getQrCodePath($code, $fullPath = false)
+    {
+        $relativePath = 'img/qrCode/' . $code . '.png';
+        return $fullPath ? public_path($relativePath) : $relativePath;
+    }
+    
+    /**
+     * Check if QR code file exists
+     * 
+     * @param string $code QR code
+     * @return bool Whether file exists
+     */
+    private function qrCodeFileExists($code)
+    {
+        $path = public_path('img/qrCode/' . $code . '.png');
+        $exists = File::exists($path);
+        if ($exists) {
+            \Log::info("QR code file for {$code} exists at {$path}");
+            // Check file integrity
+            $fileSize = File::size($path);
+            \Log::info("QR code file size: {$fileSize} bytes");
+            
+            if ($fileSize < 100) {
+                \Log::warning("QR code file for {$code} is suspiciously small: {$fileSize} bytes");
+                return false;
+            }
+        } else {
+            \Log::info("QR code file for {$code} does not exist at {$path}");
+        }
+        return $exists;
+    }
+
+    /**
+     * Download QR code
+     * 
+     * @param string $code QR code to download
+     * @return \Illuminate\Http\Response
+     */
     public function downloadQrCode($code)
     {
-        // Check if custom QR feature is enabled
-        $customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
         $invitation = Invitation::where('qrcode_invitation', $code)->first();
         
-        // Only use custom QR path if feature is enabled
-        if ($customQrEnabled && $invitation && $invitation->custom_qr_path) {
-            // Convert storage path to file system path
-            $path = storage_path('app/' . $invitation->custom_qr_path);
-            
-            // If file doesn't exist in storage, fall back to public path
-            if (!file_exists($path)) {
-                return response()->download(public_path('img/qrCode/'. $code. ".png"));
-            }
-            
-            return response()->download($path, $code . '.png');
+        if (!$invitation) {
+            \Log::warning("No invitation found for code: $code for download");
+            abort(404, 'Invitation not found');
         }
         
-        // Fallback to standard path
-        return response()->download(public_path('img/qrCode/'. $code. ".png"));
+        $qrOutputPath = public_path('img/qrCode/' . $code . '.png');
+        
+        // Force regenerate QR to ensure it's up-to-date
+        \Log::info("Regenerating QR code for download: {$code}");
+        $this->qrcodeGenerator($code, true);
+        
+        if (!file_exists($qrOutputPath)) {
+            \Log::error("Failed to find QR code file after generation for: {$code}");
+            abort(404, 'QR Code file not found');
+        }
+        
+        \Log::info("Downloading QR code from: {$qrOutputPath}");
+        return response()->download($qrOutputPath, $code . '.png', [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => 'Sat, 01 Jan 2000 00:00:00 GMT'
+        ]);
     }
 
     //  Link for Guest send email
-    public function linkGuestEmail($qrcode)
+    public function linkGuestEmail($qrcode, $trackingCode = null)
     {
         $invt = Invitation::where('qrcode_invitation', $qrcode)->first();
         $event = Event::where('id_event', 1)->first();
-        return view('link-guest.sendMail', compact('invt', 'event'));
+        return view('link-guest.sendMail', compact('invt', 'event', 'trackingCode'));
     }
 
     private function checkUniq($qrcode)
@@ -106,11 +146,18 @@ class InvitationController extends Controller
         return $qrcode;
     }
 
-    public function qrcodeGenerator($code)
+    public function qrcodeGenerator($code, $forceRegenerate = false)
     {
-        // Ensure directories exist
+        // Check if QR code already exists and we're not forcing regeneration
+        if (!$forceRegenerate && $this->qrCodeFileExists($code)) {
+            \Log::info("Skipping QR regeneration for {$code} - file already exists");
+            return;
+        }
+        
+        \Log::info("Generating QR code for: {$code}, force: " . ($forceRegenerate ? 'yes' : 'no'));
+        
+        // Ensure directory exists
         File::ensureDirectoryExists(public_path('img/qrCode'));
-        File::ensureDirectoryExists(storage_path('app/public/img/qrCode'));
         
         // Get invitation record
         $invitation = Invitation::where('qrcode_invitation', $code)->first();
@@ -118,107 +165,64 @@ class InvitationController extends Controller
             \Log::warning("No invitation found for code: $code");
         }
         
-        // Check if a default template exists AND custom QR feature is enabled
-        $customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
-        $defaultTemplate = $customQrEnabled ? \App\Models\CustomQrTemplate::where('is_default', true)->first() : null;
+        // Define path
+        $qrPath = $this->getQrCodePath($code);
+        $fullPath = $this->getQrCodePath($code, true);
         
-        if ($customQrEnabled && $defaultTemplate) {
-            // Generate QR with default template - use just the code, not the full URL
-            $qrData = $code;
+        // Generate basic QR code using Endroid
+        $qrData = route('link-guest', ['qrcode' => $code]);
             
-            // Create QR code with appropriate error correction level
-            $qrCode = \Endroid\QrCode\QrCode::create($qrData)
-                ->setEncoding(new \Endroid\QrCode\Encoding\Encoding('UTF-8'))
-                ->setErrorCorrectionLevel(\Endroid\QrCode\ErrorCorrectionLevel::High)
-                ->setSize(300)
-                ->setMargin(10);
-            
-            // Set foreground and background colors
-            $fgColor = json_decode($defaultTemplate->fg_color, true);
-            $bgColor = json_decode($defaultTemplate->bg_color, true);
-            
-            if ($fgColor && is_array($fgColor)) {
-                $qrCode->setForegroundColor(new \Endroid\QrCode\Color\Color($fgColor['r'], $fgColor['g'], $fgColor['b']));
-            }
-            
-            if ($bgColor && is_array($bgColor)) {
-                $qrCode->setBackgroundColor(new \Endroid\QrCode\Color\Color($bgColor['r'], $bgColor['g'], $bgColor['b']));
-            }
-            
-            // Create writer
-            $writer = new \Endroid\QrCode\Writer\PngWriter();
-            
-            // Add logo if template has one
-            $result = null;
-            if ($defaultTemplate->logo_path && Storage::exists($defaultTemplate->logo_path)) {
-                $logoPath = Storage::path($defaultTemplate->logo_path);
-                $logo = \Endroid\QrCode\Logo\Logo::create($logoPath)
-                    ->setResizeToWidth(isset($defaultTemplate->logo_size) ? (int)$defaultTemplate->logo_size : 80);
-                
-                $result = $writer->write($qrCode, $logo);
-            } else {
-                $result = $writer->write($qrCode);
-            }
-            
-            // Define paths
-            $publicPath = '/img/qrCode/' . $code . '.png';
-            $storagePath = 'public/img/qrCode/' . $code . '.png';
-            
-            // Save to both public and storage
-            file_put_contents(public_path($publicPath), $result->getString());
-            \Illuminate\Support\Facades\Storage::put($storagePath, $result->getString());
-            
-            // Update invitation with template info
-            if ($invitation) {
-                $invitation->update([
-                    'custom_qr_template_id' => $defaultTemplate->id,
-                    'custom_qr_path' => $storagePath
-                ]);
-                \Log::info("Updated invitation #$invitation->id_invitation with custom QR template #$defaultTemplate->id");
-            }
-            
-            return; // Exit the method after generating custom QR
+        // Create basic QR with Endroid
+                    $qrCode = \Endroid\QrCode\QrCode::create($qrData)
+                        ->setEncoding(new \Endroid\QrCode\Encoding\Encoding('UTF-8'))
+                        ->setErrorCorrectionLevel(\Endroid\QrCode\ErrorCorrectionLevel::High)
+                        ->setSize(300)
+                        ->setMargin(10);
+                    
+        // Add black and white coloring
+        $qrCode->setForegroundColor(new \Endroid\QrCode\Color\Color(0, 0, 0));
+        $qrCode->setBackgroundColor(new \Endroid\QrCode\Color\Color(255, 255, 255));
+                    
+        // Write the QR code to file
+                    $writer = new \Endroid\QrCode\Writer\PngWriter();
+                        $result = $writer->write($qrCode);
+                    
+                    file_put_contents($fullPath, $result->getString());
+                    
+        // Update invitation if needed
+                    if ($invitation) {
+                        $invitation->update([
+                            'image_qrcode_invitation' => '/' . $qrPath
+                        ]);
         }
         
-        // Use standard QR generation if no default template or custom QR is disabled
-        $result = Builder::create()
-            ->writer(new PngWriter())
-            ->writerOptions([])
-            ->data($code) // Use just the code, not the full URL
-            ->encoding(new Encoding('UTF-8'))
-            ->errorCorrectionLevel(ErrorCorrectionLevel::High)
-            ->size(300)
-            ->margin(10)
-            ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
-            ->validateResult(false)
-            ->build();
-        $result->saveToFile(public_path('/img/qrCode/' . $code . '.png'));
+        \Log::info("QR code generated successfully for {$code}");
     }
 
     public function sendEmail() {
-        $event = Event::where('id_event', 1)->first();
+        $guestQrcode = request()->input('guestQrcode');
+        $guestMail = request()->input('guestMail');
+        $guestName = request()->input('guestName');
+        
+        // Track that email will be sent
+        Log::info("Sending email to: {$guestMail}, Name: {$guestName}, QR Code: {$guestQrcode}");
+        
+        // Check if device is mobile
+        $userAgent = request()->header('User-Agent');
+        $isMobile = preg_match('/(android|iPhone|iPad|iPod|Windows Phone)/i', $userAgent);
+        
+        $qr = Invitation::where('qrcode_invitation', $guestQrcode)->first();
         $mail = new PHPMailer(true);
+        $event = \App\Models\Setting::first();
         try {
-            $guestQrcode    = $_GET['guestQrcode'];
-            $guestName      = $_GET['guestName'];
-            $guestMail      = $_GET['guestMail'];
-            if($event->image_event != "") :
-                $img = 'img/event/'.$event->image_event;
-            else :
-                $img = 'asset/front/default.png';
-            endif;
-            // set_time_limit(0); // remove a time limit if not in safe mode OR
-            set_time_limit(180); // set the time limit to 120 seconds
-
-            $mail->SMTPDebug  = SMTP::DEBUG_OFF;                        //Enable verbose debug output
-            $mail->isSMTP();           
-            $mail->Timeout    = 120;                                
-            $mail->SMTPKeepAlive = true;
-            $mail->Host       = env("MAIL_HOST");                       //Set the SMTP server to send through
+            //Server settings
+            // $mail->SMTPDebug = SMTP::DEBUG_CONNECTION;                      //Enable verbose debug output
+            $mail->isSMTP();                                            //Send using SMTP
+            $mail->Host       = env("MAIL_HOST");                     //Set the SMTP server to send through
             $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-            $mail->Username   = env("MAIL_USERNAME");                   //SMTP username
-            $mail->Password   = env("MAIL_PASSWORD");                   //SMTP password
-            $mail->SMTPSecure = env("MAIL_ENCRYPTION");                 //Enable implicit TLS encryption
+            $mail->Username   = env("MAIL_USERNAME");                     //SMTP username
+            $mail->Password   = env("MAIL_PASSWORD");                               //SMTP password
+            $mail->SMTPSecure = env("MAIL_ENCRYPTION") == 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
             $mail->Port       = env("MAIL_PORT");                       //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
             $mail->setFrom(env("MAIL_FROM_ADDRESS"), myEvent()->name_event);
@@ -236,11 +240,21 @@ class InvitationController extends Controller
             }
 
             $mail->AddEmbeddedImage(public_path('img/qrCode/' . $guestQrcode . '.png'), 'qrcode');  
+            
+            // Add tracking code parameter (timestamp + email hash for security)
+            $trackingCode = base64_encode(json_encode([
+                'email' => $guestMail,
+                'time' => time(),
+                'code' => $guestQrcode,
+                'hash' => md5($guestMail . $guestQrcode . env('APP_KEY'))
+            ]));
        
             //Content
             $mail->isHTML(true);                                  //Set email format to HTML
             $mail->Subject = myEvent()->type_event;
-            $mail->Body    = $this->linkGuestEmail($guestQrcode)->render();
+            
+            // Pass tracking code to the view
+            $mail->Body = $this->linkGuestEmail($guestQrcode, $trackingCode)->render();
 
             $mail->send();
             $mail->SmtpClose();
@@ -249,7 +263,8 @@ class InvitationController extends Controller
                 'send_email_invitation' => 1,
                 'email_sent' => true,
                 'email_read' => false,
-                'email_bounced' => false
+                'email_bounced' => false,
+                'tracking_code' => $trackingCode // Save tracking code for verification later
             ]);
 
             $status = "success";
@@ -365,9 +380,12 @@ class InvitationController extends Controller
 
     public function delete(Request $request)
     {
-        if (file_exists(public_path('/img/qrCode/' . $request->qrcode . ".png"))) {
-            unlink(public_path('/img/qrCode/' . $request->qrcode . ".png"));
+        // Use the helper method for consistent file path
+        $qrFilePath = $this->getQrCodePath($request->qrcode, true);
+        if (file_exists($qrFilePath)) {
+            unlink($qrFilePath);
         }
+        
         if (file_exists(public_path('/img/scan/scan-in/' . $request->qrcode . ".jpeg"))) {
             unlink(public_path('/img/scan/scan-in/' . $request->qrcode . ".jpeg"));
         }   

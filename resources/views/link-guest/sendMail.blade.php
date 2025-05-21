@@ -83,12 +83,28 @@
                         text-decoration: none;
                         border-radius: 50rem;
                         margin: 1rem 0;"
-                        href="{{ url('/invitation/' . @$invt->qrcode_invitation) }}" target="_blank">Buka Link Undangan</a>
+                        href="{{ url('/invitation/' . @$invt->qrcode_invitation . (isset($trackingCode) ? '?track=' . $trackingCode : '')) }}" target="_blank">Buka Link Undangan</a>
                 </div>
 
                 <div style="font-size:12px; color: {{ $event->color_text_event ?? "#e3eaef" }};">
                     <i>* Simpan barcode dan tunjukkan pada saat acara.</i>
                 </div>
+
+                @if(isset($trackingCode))
+                <div style="margin-top:20px;">
+                    <a style="display: inline-block;
+                        font-weight: 400;
+                        color: #ffffff !important;
+                        vertical-align: middle;
+                        padding: 0.375rem 0.75rem;
+                        font-size: 1rem;
+                        background-color: #3498db;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        margin: 0.5rem 0;"
+                        href="{{ url('/track-confirm/' . @$invt->qrcode_invitation . '?t=' . $trackingCode) }}" target="_blank">Lihat Undangan di Browser</a>
+                </div>
+                @endif
 
                 <div style="margin-top:25px; color: {{ $event->color_text_event ?? "#e3eaef" }};">
                     {!! nl2br($event->information_event) !!}

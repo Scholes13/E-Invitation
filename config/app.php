@@ -159,6 +159,7 @@ return [
         /*
          * Package Service Providers...
          */
+        jdavidbakr\MailTracker\MailTrackerServiceProvider::class,
 
         /*
          * Application Service Providers...

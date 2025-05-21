@@ -1,27 +1,11 @@
 @extends('template.template')
 
 @section('content')
-<!-- Add SweetAlert2 CSS -->
-<link rel="stylesheet" href="{{ asset('node_modules/sweetalert2/dist/sweetalert2.min.css') }}">
-<!-- Fallback to CDN if node_modules isn't available -->
+<!-- Add SweetAlert2 CSS directly from CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<!-- No fallback needed, using CDN directly -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Check if the SweetAlert2 CSS was loaded
-        let styleLoaded = false;
-        for (let i = 0; i < document.styleSheets.length; i++) {
-            if (document.styleSheets[i].href && document.styleSheets[i].href.includes('sweetalert2.min.css')) {
-                styleLoaded = true;
-                break;
-            }
-        }
-        if (!styleLoaded) {
-            console.log('Loading SweetAlert2 CSS from CDN');
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css';
-            document.head.appendChild(link);
-        }
-        
         // Verify CSRF token exists
         if (!document.querySelector('meta[name="csrf-token"]')) {
             console.error('CSRF token meta tag not found! Adding one dynamically');
@@ -129,9 +113,6 @@
                                     <a class="nav-link" id="corners-tab" data-toggle="tab" href="#corners" role="tab">Corners</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" id="corner-dots-tab" data-toggle="tab" href="#corner-dots" role="tab">Corner Dots</a>
-                                </li>
-                                <li class="nav-item">
                                     <a class="nav-link" id="background-tab" data-toggle="tab" href="#background" role="tab">Background</a>
                                 </li>
                                 <li class="nav-item">
@@ -155,7 +136,6 @@
                                             <option value="dots">Dots</option>
                                             <option value="rounded">Rounded</option>
                                             <option value="classy">Classy</option>
-                                            <option value="classy-rounded">Classy Rounded</option>
                                         </select>
                                     </div>
                                     
@@ -266,67 +246,6 @@
                                             <div class="d-flex justify-content-between">
                                                 <small>0°</small>
                                                 <small id="cornerGradientRotationValue">0°</small>
-                                                <small>360°</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Corner Dots Options -->
-                                <div class="tab-pane fade" id="corner-dots" role="tabpanel">
-                                    <div class="form-group">
-                                        <label>Corner Dots Style</label>
-                                        <select class="form-control" id="cornerDotType">
-                                            <option value="square">Square</option>
-                                            <option value="dot">Dot</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label>Color Type</label>
-                                        <select class="form-control" id="cornerDotColorType">
-                                            <option value="single">Single Color</option>
-                                            <option value="gradient">Color Gradient</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div id="cornerDotSingleColor">
-                                        <div class="form-group">
-                                            <label>Corner Dots Color</label>
-                                            <input type="color" class="form-control" id="cornerDotColor" value="#000000">
-                                        </div>
-                                    </div>
-                                    
-                                    <div id="cornerDotGradient" style="display: none;">
-                                        <div class="form-group">
-                                            <label>Gradient Type</label>
-                                            <select class="form-control" id="cornerDotGradientType">
-                                                <option value="linear">Linear</option>
-                                                <option value="radial">Radial</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>Gradient Color 1</label>
-                                                    <input type="color" class="form-control" id="cornerDotGradientColor1" value="#000000">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>Gradient Color 2</label>
-                                                    <input type="color" class="form-control" id="cornerDotGradientColor2" value="#595959">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label>Rotation (degrees)</label>
-                                            <input type="range" class="form-control-range" id="cornerDotGradientRotation" min="0" max="360" value="0">
-                                            <div class="d-flex justify-content-between">
-                                                <small>0°</small>
-                                                <small id="cornerDotGradientRotationValue">0°</small>
                                                 <small>360°</small>
                                             </div>
                                         </div>
@@ -515,27 +434,10 @@
 </div>
 
 @push('scripts')
-<!-- Primary SweetAlert2 from node_modules -->
-<script src="{{ asset('node_modules/sweetalert2/dist/sweetalert2.all.min.js') }}"></script>
-<!-- Fallback to CDN if node_modules isn't available -->
-<script>
-    if (typeof Swal === 'undefined') {
-        document.write('<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"><\/script>');
-        console.log('Using SweetAlert2 CDN fallback');
-    }
-</script>
-<script src="{{ asset('node_modules/qr-code-styling/lib/qr-code-styling.js') }}"></script>
-<!-- Fallback to CDN if node_modules isn't available -->
-<script>
-    window.addEventListener('error', function(e) {
-        if (e.target.src && e.target.src.includes('qr-code-styling.js')) {
-            console.log('Loading QR code styling from CDN');
-            const fallbackScript = document.createElement('script');
-            fallbackScript.src = 'https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js';
-            document.head.appendChild(fallbackScript);
-        }
-    }, true);
-</script>
+<!-- Use SweetAlert2 directly from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Load the QR Code Styling library with our fix -->
+<script src="{{ asset('js/qr-code-styling-fix.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize QR Code Styling object
@@ -544,387 +446,379 @@
         let previewAttempts = 0;
         const MAX_PREVIEW_ATTEMPTS = 3;
         
-        // Initialize logoUrl variable to store logo URL
-        let logoUrl = "";
+        // Wait for QR code styling library to be ready
+        document.addEventListener('qr-code-styling-ready', function() {
+            console.log('QR Code Styling library is ready');
+            initQrCodeEditor();
+        });
         
-        // Check if we're editing a template with an existing logo
-        @if(isset($selectedTemplate) && $selectedTemplate->logo_path)
-            logoUrl = "{{ Storage::url(str_replace('public/', '', $selectedTemplate->logo_path)) }}";
-            console.log('Loaded existing logo URL:', logoUrl);
-        @endif
+        function initQrCodeEditor() {
+            // Initialize logoUrl variable to store logo URL
+            let logoUrl = "";
+            
+            // Check if we're editing a template with an existing logo
+            @if(isset($selectedTemplate) && $selectedTemplate->logo_path)
+                logoUrl = "{{ Storage::url(str_replace('public/', '', $selectedTemplate->logo_path)) }}";
+                console.log('Loaded existing logo URL:', logoUrl);
+            @endif
 
-        // Function to initialize QR Code object
-        function initQrCode(options = {}) {
-            try {
-                previewAttempts = 0;
-                const defaultOptions = {
-                    width: parseInt($('#qrWidth').val()) || 300,
-                    height: parseInt($('#qrHeight').val()) || 300,
-                    type: 'svg',
-                    data: $('#qrData').val(),
-                    margin: parseInt($('#qrMargin').val()) || 10,
-                    qrOptions: {
-                        typeNumber: 0,
-                        mode: 'Byte',
-                        errorCorrectionLevel: 'H'
-                    },
-                    dotsOptions: {
-                        color: $('#dotColor').val(),
-                        type: $('#dotType').val()
-                    },
-                    backgroundOptions: {
-                        color: $('#bgColor').val()
-                    }
-                };
-                
-                // Add logo if available
-                if (logoUrl) {
-                    defaultOptions.image = logoUrl;
-                    defaultOptions.imageOptions = {
-                        hideBackgroundDots: $('#hideBackgroundDots').is(':checked'),
-                        imageSize: parseFloat($('#logoSize').val()) || 0.4,
-                        margin: parseInt($('#logoMargin').val()) || 10,
-                        crossOrigin: "anonymous"
+            // Function to initialize QR Code object
+            function initQrCode(options = {}) {
+                try {
+                    previewAttempts = 0;
+                    const defaultOptions = {
+                        width: parseInt($('#qrWidth').val()) || 300,
+                        height: parseInt($('#qrHeight').val()) || 300,
+                        type: 'svg',
+                        data: $('#qrData').val(),
+                        margin: parseInt($('#qrMargin').val()) || 10,
+                        qrOptions: {
+                            typeNumber: 0,
+                            mode: 'Byte',
+                            errorCorrectionLevel: 'H'
+                        },
+                        dotsOptions: {
+                            color: $('#dotColor').val(),
+                            type: $('#dotType').val()
+                        },
+                        backgroundOptions: {
+                            color: $('#bgColor').val()
+                        }
                     };
-                    console.log('Including logo in QR code initialization:', logoUrl);
+                    
+                    // Add logo if available
+                    if (logoUrl) {
+                        defaultOptions.image = logoUrl;
+                        defaultOptions.imageOptions = {
+                            hideBackgroundDots: $('#hideBackgroundDots').is(':checked'),
+                            imageSize: parseFloat($('#logoSize').val()) || 0.4,
+                            margin: parseInt($('#logoMargin').val()) || 10,
+                            crossOrigin: "anonymous"
+                        };
+                        console.log('Including logo in QR code initialization:', logoUrl);
+                    }
+                    
+                    // Merge default options with provided options
+                    const mergedOptions = {...defaultOptions, ...options};
+                    
+                    // Validate dimensions to prevent browser freeze
+                    if (mergedOptions.width <= 0 || mergedOptions.width > 1000) {
+                        console.warn('Invalid width detected, using default 300px');
+                        mergedOptions.width = 300;
+                        $('#qrWidth').val(300);
+                    }
+                    
+                    if (mergedOptions.height <= 0 || mergedOptions.height > 1000) {
+                        console.warn('Invalid height detected, using default 300px');
+                        mergedOptions.height = 300;
+                        $('#qrHeight').val(300);
+                    }
+                    
+                    if (mergedOptions.margin < 0 || mergedOptions.margin > 50) {
+                        console.warn('Invalid margin detected, using default 10px');
+                        mergedOptions.margin = 10;
+                        $('#qrMargin').val(10);
+                    }
+                    
+                    // Save current settings for later reference
+                    currentQrSettings = mergedOptions;
+                    
+                    // Create new QR code object
+                    qrCode = new QRCodeStyling(mergedOptions);
+                    
+                    // Debug
+                    console.log('Creating QR code with options:', JSON.stringify(mergedOptions));
+                    
+                    // Clear previous content and append new QR code
+                    $('#qrcode-preview').empty();
+                    $('#preview-error').hide();
+                    
+                    qrCode.append(document.getElementById('qrcode-preview'));
+                    
+                    // Update the server preview URL
+                    updateServerPreviewUrl();
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Error initializing QR code:', error);
+                    $('#preview-error').text('Error creating QR code: ' + error.message).show();
+                    return false;
                 }
-                
-                // Merge default options with provided options
-                const mergedOptions = {...defaultOptions, ...options};
-                
-                // Validate dimensions to prevent browser freeze
-                if (mergedOptions.width <= 0 || mergedOptions.width > 1000) {
-                    console.warn('Invalid width detected, using default 300px');
-                    mergedOptions.width = 300;
-                    $('#qrWidth').val(300);
-                }
-                
-                if (mergedOptions.height <= 0 || mergedOptions.height > 1000) {
-                    console.warn('Invalid height detected, using default 300px');
-                    mergedOptions.height = 300;
-                    $('#qrHeight').val(300);
-                }
-                
-                if (mergedOptions.margin < 0 || mergedOptions.margin > 50) {
-                    console.warn('Invalid margin detected, using default 10px');
-                    mergedOptions.margin = 10;
-                    $('#qrMargin').val(10);
-                }
-                
-                // Save current settings for later reference
-                currentQrSettings = mergedOptions;
-                
-                // Create new QR code object
-                qrCode = new QRCodeStyling(mergedOptions);
-                
-                // Clear previous content and append new QR code
-                $('#qrcode-preview').empty();
-                $('#preview-error').hide();
-                
-                qrCode.append(document.getElementById('qrcode-preview'));
-                
-                // Update the server preview URL
-                updateServerPreviewUrl();
-                
-                return true;
-            } catch (error) {
-                console.error('Error initializing QR code:', error);
-                $('#preview-error').text('Error creating QR code: ' + error.message).show();
-                return false;
             }
-        }
-        
-        // Function to update QR code with current settings
-        function updateQrCode() {
-            try {
-                previewAttempts++;
-                if (previewAttempts > MAX_PREVIEW_ATTEMPTS) {
-                    $('#preview-error').text('Multiple errors occurred. Please check your settings and try again.').show();
+            
+            // Function to update QR code with current settings
+            function updateQrCode() {
+                try {
+                    previewAttempts++;
+                    if (previewAttempts > MAX_PREVIEW_ATTEMPTS) {
+                        $('#preview-error').text('Multiple errors occurred. Please check your settings and try again.').show();
+                        return;
+                    }
+                    
+                    // Get all current settings
+                    const options = getQrOptions();
+                    
+                    // Validate the settings
+                    if (!validateQrSettings(options)) {
                     return;
                 }
                 
-                // Get all current settings
-                const options = getQrOptions();
+                    // If QR code object exists, update it
+                    if (qrCode) {
+                        qrCode.update(options);
+                        currentQrSettings = options;
+                        $('#preview-error').hide();
+                        updateServerPreviewUrl();
+                        } else {
+                        // Otherwise, initialize it
+                        initQrCode(options);
+                        }
+                    } catch (error) {
+                    console.error('Error updating QR code:', error);
+                    $('#preview-error').text('Error updating QR code: ' + error.message).show();
+                }
+            }
+            
+            // Validate QR settings to prevent errors
+            function validateQrSettings(settings) {
+                // Check required values
+                if (!settings.data) {
+                    $('#preview-error').text('QR data cannot be empty').show();
+                    return false;
+                }
                 
-                // Validate the settings
-                if (!validateQrSettings(options)) {
-                return;
+                // Validate dimensions
+                if (settings.width <= 0 || settings.height <= 0) {
+                    $('#preview-error').text('Width and height must be positive values').show();
+                    return false;
+                }
+                
+                // Validate margin
+                if (settings.margin < 0) {
+                    $('#preview-error').text('Margin cannot be negative').show();
+                    return false;
+                }
+                
+                return true;
             }
             
-                // If QR code object exists, update it
-                if (qrCode) {
-                    qrCode.update(options);
-                    currentQrSettings = options;
-                    $('#preview-error').hide();
-                    updateServerPreviewUrl();
-                    } else {
-                    // Otherwise, initialize it
-                    initQrCode(options);
-                    }
-                } catch (error) {
-                console.error('Error updating QR code:', error);
-                $('#preview-error').text('Error updating QR code: ' + error.message).show();
-            }
-        }
-        
-        // Validate QR settings to prevent errors
-        function validateQrSettings(settings) {
-            // Check required values
-            if (!settings.data) {
-                $('#preview-error').text('QR data cannot be empty').show();
-                return false;
+            // Update server preview URL with template ID
+            function updateServerPreviewUrl() {
+                const templateId = $('#templateId').val();
+                if (templateId) {
+                    const previewUrl = `/custom-qr/${templateId}/preview?data=${encodeURIComponent($('#qrData').val())}`;
+                    $('#view-server-preview').attr('href', previewUrl);
+                }
             }
             
-            // Validate dimensions
-            if (settings.width <= 0 || settings.height <= 0) {
-                $('#preview-error').text('Width and height must be positive values').show();
-                return false;
-            }
-            
-            // Validate margin
-            if (settings.margin < 0) {
-                $('#preview-error').text('Margin cannot be negative').show();
-                return false;
-            }
-            
-            return true;
-        }
-        
-        // Update server preview URL with template ID
-        function updateServerPreviewUrl() {
-            const templateId = $('#templateId').val();
-            if (templateId) {
-                const previewUrl = `/custom-qr/${templateId}/preview?data=${encodeURIComponent($('#qrData').val())}`;
-                $('#view-server-preview').attr('href', previewUrl);
-            }
-        }
-        
-        // Event handler for the refresh preview button
-        $('#refresh-preview').on('click', function(e) {
-            e.preventDefault();
-            previewAttempts = 0; // Reset attempt counter
-            $('#preview-error').hide();
-            updateQrCode();
-        });
-
-        // Save Template button in header
-        document.getElementById('saveTemplateBtn').addEventListener('click', function() {
-            saveQRTemplate();
-        });
-        
-        // Save Template button at the bottom
-        document.getElementById('saveTemplateBtnBottom').addEventListener('click', function() {
-            saveQRTemplate();
-        });
-        
-        // Download QR code
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            if (qrCode) {
-                qrCode.download({ 
-                    name: 'qrcode', 
-                    extension: 'png' 
-                });
-            } else {
-                alert('Please generate a QR code first');
-            }
-        });
-
-        // Download specific format
-        document.getElementById('downloadPngBtn').addEventListener('click', function() {
-            if (qrCode) {
-                qrCode.download({ 
-                    name: 'qrcode', 
-                    extension: 'png' 
-                });
-            } else {
-                alert('Please generate a QR code first');
-            }
-        });
-
-        document.getElementById('downloadSvgBtn').addEventListener('click', function() {
-            if (qrCode) {
-                qrCode.download({ 
-                    name: 'qrcode', 
-                    extension: 'svg' 
-                });
-            } else {
-                alert('Please generate a QR code first');
-            }
-        });
-
-        document.getElementById('downloadJpgBtn').addEventListener('click', function() {
-            if (qrCode) {
-                qrCode.download({ 
-                    name: 'qrcode', 
-                    extension: 'jpeg' 
-                });
-            } else {
-                alert('Please generate a QR code first');
-            }
-        });
-        
-        // Export settings as JSON
-        document.getElementById('exportJSONBtn').addEventListener('click', function() {
-            const options = getQrOptions();
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(options, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "qr-code-settings.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        });
-        
-                    // Handle logo file upload
-        document.getElementById('logoUpload').addEventListener('change', function(e) {
-            if (e.target.files && e.target.files[0]) {
-                // Read the file and convert to base64 to avoid using blob URLs
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    logoUrl = event.target.result; // This will be a data URL (base64)
-                    console.log('New logo uploaded and converted to base64:', logoUrl.substring(0, 30) + '...');
-                    // Update QR code with new logo
-                    updateQrCode();
-                };
-                reader.onerror = function() {
-                    console.error('Error reading logo file');
-                };
-                reader.readAsDataURL(e.target.files[0]);
-            } else {
-                console.log('No new logo file selected, keeping existing logo:', logoUrl);
-            }
-            
-            // Update file input label
-            const fileName = e.target.value.split('\\').pop();
-            const fileLabel = e.target.nextElementSibling;
-            fileLabel.textContent = fileName || 'Choose logo';
-        });
-        
-        // Add input change listeners for all form elements
-        const formInputs = document.querySelectorAll('#qrGeneratorForm input, #qrGeneratorForm select');
-        formInputs.forEach(input => {
-            input.addEventListener('change', function() {
+            // Event handler for the refresh preview button
+            $('#refresh-preview').on('click', function(e) {
+                e.preventDefault();
+                previewAttempts = 0; // Reset attempt counter
+                $('#preview-error').hide();
                 updateQrCode();
             });
-        });
-        
-        // Link width and height fields to maintain a square QR code
-        document.getElementById('qrWidth').addEventListener('change', function() {
-            // Update height to match width
-            document.getElementById('qrHeight').value = this.value;
-        });
-        
-        document.getElementById('qrHeight').addEventListener('change', function() {
-            // Update width to match height
-            document.getElementById('qrWidth').value = this.value;
-        });
-        
-        // Initialize form with existing template settings if available
-        @if(isset($selectedTemplate) && $selectedTemplate->settings_json)
-            try {
-                const templateSettings = {!! $selectedTemplate->settings_json !!};
-                console.log('Loading template settings:', templateSettings);
-                
-                // Fill in form values from template settings
-                if (templateSettings.width) $('#qrWidth').val(templateSettings.width);
-                if (templateSettings.height) $('#qrHeight').val(templateSettings.height);
-                if (templateSettings.margin) $('#qrMargin').val(templateSettings.margin);
-                
-                // Fill in advanced options
-                if (templateSettings.qrOptions) {
-                    if (templateSettings.qrOptions.typeNumber !== undefined) $('#typeNumber').val(templateSettings.qrOptions.typeNumber);
-                    if (templateSettings.qrOptions.mode) $('#mode').val(templateSettings.qrOptions.mode);
-                    if (templateSettings.qrOptions.errorCorrectionLevel) $('#errorCorrectionLevel').val(templateSettings.qrOptions.errorCorrectionLevel);
-                }
-                
-                // Fill in dots options
-                if (templateSettings.dotsOptions) {
-                    if (templateSettings.dotsOptions.type) $('#dotType').val(templateSettings.dotsOptions.type);
+
+            // Save Template button in header
+            document.getElementById('saveTemplateBtn').addEventListener('click', function() {
+                saveQRTemplate();
+            });
+            
+            // Save Template button at the bottom
+            document.getElementById('saveTemplateBtnBottom').addEventListener('click', function() {
+                saveQRTemplate();
+            });
+            
+            // Download QR code
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                if (qrCode) {
+                    // Force recreate QR code before download for consistency
+                    const options = getQrOptions();
+                    qrCode.update(options);
                     
-                    if (templateSettings.dotsOptions.gradient) {
-                        $('#dotColorType').val('gradient');
-                        if (templateSettings.dotsOptions.gradient.type) $('#dotGradientType').val(templateSettings.dotsOptions.gradient.type);
-                        if (templateSettings.dotsOptions.gradient.rotation !== undefined) $('#dotGradientRotation').val(templateSettings.dotsOptions.gradient.rotation);
-                        if (templateSettings.dotsOptions.gradient.colorStops && templateSettings.dotsOptions.gradient.colorStops.length >= 2) {
-                            $('#dotGradientColor1').val(templateSettings.dotsOptions.gradient.colorStops[0].color);
-                            $('#dotGradientColor2').val(templateSettings.dotsOptions.gradient.colorStops[1].color);
-                        }
-                    } else if (templateSettings.dotsOptions.color) {
-                        $('#dotColorType').val('single');
-                        $('#dotColor').val(templateSettings.dotsOptions.color);
-                    }
+                    qrCode.download({ 
+                        name: 'qrcode', 
+                        extension: 'png' 
+                    });
+                } else {
+                    alert('Please generate a QR code first');
                 }
-                
-                // Fill in corners options
-                if (templateSettings.cornersSquareOptions) {
-                    if (templateSettings.cornersSquareOptions.type) $('#cornerType').val(templateSettings.cornersSquareOptions.type);
+            });
+
+            // Download specific format
+            document.getElementById('downloadPngBtn').addEventListener('click', function() {
+                if (qrCode) {
+                    // Force recreate QR code before download for consistency
+                    const options = getQrOptions();
+                    qrCode.update(options);
                     
-                    if (templateSettings.cornersSquareOptions.gradient) {
-                        $('#cornerColorType').val('gradient');
-                        if (templateSettings.cornersSquareOptions.gradient.type) $('#cornerGradientType').val(templateSettings.cornersSquareOptions.gradient.type);
-                        if (templateSettings.cornersSquareOptions.gradient.rotation !== undefined) $('#cornerGradientRotation').val(templateSettings.cornersSquareOptions.gradient.rotation);
-                        if (templateSettings.cornersSquareOptions.gradient.colorStops && templateSettings.cornersSquareOptions.gradient.colorStops.length >= 2) {
-                            $('#cornerGradientColor1').val(templateSettings.cornersSquareOptions.gradient.colorStops[0].color);
-                            $('#cornerGradientColor2').val(templateSettings.cornersSquareOptions.gradient.colorStops[1].color);
-                        }
-                    } else if (templateSettings.cornersSquareOptions.color) {
-                        $('#cornerColorType').val('single');
-                        $('#cornerColor').val(templateSettings.cornersSquareOptions.color);
-                    }
+                    qrCode.download({ 
+                        name: 'qrcode', 
+                        extension: 'png' 
+                    });
+                } else {
+                    alert('Please generate a QR code first');
                 }
-                
-                // Fill in corner dots options
-                if (templateSettings.cornersDotOptions) {
-                    if (templateSettings.cornersDotOptions.type) $('#cornerDotType').val(templateSettings.cornersDotOptions.type);
+            });
+
+            document.getElementById('downloadSvgBtn').addEventListener('click', function() {
+                if (qrCode) {
+                    // Force recreate QR code before download for consistency
+                    const options = getQrOptions();
+                    qrCode.update(options);
                     
-                    if (templateSettings.cornersDotOptions.gradient) {
-                        $('#cornerDotColorType').val('gradient');
-                        if (templateSettings.cornersDotOptions.gradient.type) $('#cornerDotGradientType').val(templateSettings.cornersDotOptions.gradient.type);
-                        if (templateSettings.cornersDotOptions.gradient.rotation !== undefined) $('#cornerDotGradientRotation').val(templateSettings.cornersDotOptions.gradient.rotation);
-                        if (templateSettings.cornersDotOptions.gradient.colorStops && templateSettings.cornersDotOptions.gradient.colorStops.length >= 2) {
-                            $('#cornerDotGradientColor1').val(templateSettings.cornersDotOptions.gradient.colorStops[0].color);
-                            $('#cornerDotGradientColor2').val(templateSettings.cornersDotOptions.gradient.colorStops[1].color);
-                        }
-                    } else if (templateSettings.cornersDotOptions.color) {
-                        $('#cornerDotColorType').val('single');
-                        $('#cornerDotColor').val(templateSettings.cornersDotOptions.color);
+                    qrCode.download({ 
+                        name: 'qrcode', 
+                        extension: 'svg' 
+                    });
+                } else {
+                    alert('Please generate a QR code first');
+                }
+            });
+
+            document.getElementById('downloadJpgBtn').addEventListener('click', function() {
+                if (qrCode) {
+                    // Force recreate QR code before download for consistency
+                    const options = getQrOptions();
+                    qrCode.update(options);
+                    
+                    qrCode.download({ 
+                        name: 'qrcode', 
+                        extension: 'jpeg' 
+                    });
+                } else {
+                    alert('Please generate a QR code first');
+                }
+            });
+            
+            // Export settings as JSON
+            document.getElementById('exportJSONBtn').addEventListener('click', function() {
+                const options = getQrOptions();
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(options, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "qr-code-settings.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            });
+            
+                        // Handle logo file upload
+            document.getElementById('logoUpload').addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    // Read the file and convert to base64 to avoid using blob URLs
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        logoUrl = event.target.result; // This will be a data URL (base64)
+                        console.log('New logo uploaded and converted to base64:', logoUrl.substring(0, 30) + '...');
+                        // Update QR code with new logo
+                        updateQrCode();
+                    };
+                    reader.onerror = function() {
+                        console.error('Error reading logo file');
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                } else {
+                    console.log('No new logo file selected, keeping existing logo:', logoUrl);
+                }
+                
+                // Update file input label
+                const fileName = e.target.value.split('\\').pop();
+                const fileLabel = e.target.nextElementSibling;
+                fileLabel.textContent = fileName || 'Choose logo';
+            });
+            
+            // Add input change listeners for all form elements
+            const formInputs = document.querySelectorAll('#qrGeneratorForm input, #qrGeneratorForm select');
+            formInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    updateQrCode();
+                });
+            });
+            
+            // Link width and height fields to maintain a square QR code
+            document.getElementById('qrWidth').addEventListener('change', function() {
+                // Update height to match width
+                document.getElementById('qrHeight').value = this.value;
+            });
+            
+            document.getElementById('qrHeight').addEventListener('change', function() {
+                // Update width to match height
+                document.getElementById('qrWidth').value = this.value;
+            });
+            
+            // Initialize form with existing template settings if available
+            @if(isset($selectedTemplate) && $selectedTemplate->settings_json)
+                try {
+                    const templateSettings = {!! $selectedTemplate->settings_json !!};
+                    console.log('Loading template settings:', templateSettings);
+                    
+                    // Fill in form values from template settings
+                    if (templateSettings.width) $('#qrWidth').val(templateSettings.width);
+                    if (templateSettings.height) $('#qrHeight').val(templateSettings.height);
+                    if (templateSettings.margin) $('#qrMargin').val(templateSettings.margin);
+                    
+                    // Fill in advanced options
+                    if (templateSettings.qrOptions) {
+                        if (templateSettings.qrOptions.typeNumber !== undefined) $('#typeNumber').val(templateSettings.qrOptions.typeNumber);
+                        if (templateSettings.qrOptions.mode) $('#mode').val(templateSettings.qrOptions.mode);
+                        if (templateSettings.qrOptions.errorCorrectionLevel) $('#errorCorrectionLevel').val(templateSettings.qrOptions.errorCorrectionLevel);
                     }
-                }
-                
-                // Fill in background options
-                if (templateSettings.backgroundOptions) {
-                    if (templateSettings.backgroundOptions.gradient) {
-                        $('#bgColorType').val('gradient');
-                        if (templateSettings.backgroundOptions.gradient.type) $('#bgGradientType').val(templateSettings.backgroundOptions.gradient.type);
-                        if (templateSettings.backgroundOptions.gradient.rotation !== undefined) $('#bgGradientRotation').val(templateSettings.backgroundOptions.gradient.rotation);
-                        if (templateSettings.backgroundOptions.gradient.colorStops && templateSettings.backgroundOptions.gradient.colorStops.length >= 2) {
-                            $('#bgGradientColor1').val(templateSettings.backgroundOptions.gradient.colorStops[0].color);
-                            $('#bgGradientColor2').val(templateSettings.backgroundOptions.gradient.colorStops[1].color);
+                    
+                    // Fill in dots options
+                    if (templateSettings.dotsOptions) {
+                        if (templateSettings.dotsOptions.type) $('#dotType').val(templateSettings.dotsOptions.type);
+                        
+                        if (templateSettings.dotsOptions.gradient) {
+                            $('#dotColorType').val('gradient');
+                            if (templateSettings.dotsOptions.gradient.type) $('#dotGradientType').val(templateSettings.dotsOptions.gradient.type);
+                            if (templateSettings.dotsOptions.gradient.rotation !== undefined) $('#dotGradientRotation').val(templateSettings.dotsOptions.gradient.rotation);
+                            if (templateSettings.dotsOptions.gradient.colorStops && templateSettings.dotsOptions.gradient.colorStops.length >= 2) {
+                                $('#dotGradientColor1').val(templateSettings.dotsOptions.gradient.colorStops[0].color);
+                                $('#dotGradientColor2').val(templateSettings.dotsOptions.gradient.colorStops[1].color);
+                            }
+                        } else if (templateSettings.dotsOptions.color) {
+                            $('#dotColorType').val('single');
+                            $('#dotColor').val(templateSettings.dotsOptions.color);
                         }
-                    } else if (templateSettings.backgroundOptions.color) {
-                        $('#bgColorType').val('single');
-                        $('#bgColor').val(templateSettings.backgroundOptions.color);
                     }
+                    
+                    // Fill in corners options
+                    if (templateSettings.cornersSquareOptions) {
+                        if (templateSettings.cornersSquareOptions.type) $('#cornerType').val(templateSettings.cornersSquareOptions.type);
+                        
+                        if (templateSettings.cornersSquareOptions.gradient) {
+                            $('#cornerColorType').val('gradient');
+                            if (templateSettings.cornersSquareOptions.gradient.type) $('#cornerGradientType').val(templateSettings.cornersSquareOptions.gradient.type);
+                            if (templateSettings.cornersSquareOptions.gradient.rotation !== undefined) $('#cornerGradientRotation').val(templateSettings.cornersSquareOptions.gradient.rotation);
+                            if (templateSettings.cornersSquareOptions.gradient.colorStops && templateSettings.cornersSquareOptions.gradient.colorStops.length >= 2) {
+                                $('#cornerGradientColor1').val(templateSettings.cornersSquareOptions.gradient.colorStops[0].color);
+                                $('#cornerGradientColor2').val(templateSettings.cornersSquareOptions.gradient.colorStops[1].color);
+                            }
+                        } else if (templateSettings.cornersSquareOptions.color) {
+                            $('#cornerColorType').val('single');
+                            $('#cornerColor').val(templateSettings.cornersSquareOptions.color);
+                        }
+                    }
+                    
+                    // Fill in logo options if available
+                    if (templateSettings.imageOptions) {
+                        if (templateSettings.imageOptions.hideBackgroundDots !== undefined) $('#hideBackgroundDots').prop('checked', templateSettings.imageOptions.hideBackgroundDots);
+                        if (templateSettings.imageOptions.imageSize !== undefined) $('#logoSize').val(templateSettings.imageOptions.imageSize);
+                        if (templateSettings.imageOptions.margin !== undefined) $('#logoMargin').val(templateSettings.imageOptions.margin);
+                    }
+                    
+                    // Handle logo
+                    if (templateSettings.image) {
+                        // If image URL is in the settings, use it
+                        logoUrl = templateSettings.image;
+                    }
+                    
+                    // Toggle visibility of gradient options based on loaded settings
+                    toggleGradientOptions();
+                } catch (error) {
+                    console.error('Error loading template settings:', error);
                 }
-                
-                // Fill in logo options if available
-                if (templateSettings.imageOptions) {
-                    if (templateSettings.imageOptions.hideBackgroundDots !== undefined) $('#hideBackgroundDots').prop('checked', templateSettings.imageOptions.hideBackgroundDots);
-                    if (templateSettings.imageOptions.imageSize !== undefined) $('#logoSize').val(templateSettings.imageOptions.imageSize);
-                    if (templateSettings.imageOptions.margin !== undefined) $('#logoMargin').val(templateSettings.imageOptions.margin);
-                }
-                
-                // Handle logo
-                if (templateSettings.image) {
-                    // If image URL is in the settings, use it
-                    logoUrl = templateSettings.image;
-                }
-                
-                // Toggle visibility of gradient options based on loaded settings
-                toggleGradientOptions();
-            } catch (error) {
-                console.error('Error loading template settings:', error);
-            }
         @endif
         
         // Initialize QR code with current settings
@@ -950,15 +844,6 @@
                 $('#cornerSingleColor').show();
             }
             
-            // Corner dots gradient
-            if ($('#cornerDotColorType').val() === 'gradient') {
-                $('#cornerDotGradient').show();
-                $('#cornerDotSingleColor').hide();
-            } else {
-                $('#cornerDotGradient').hide();
-                $('#cornerDotSingleColor').show();
-            }
-            
             // Background gradient
             if ($('#bgColorType').val() === 'gradient') {
                 $('#bgGradient').show();
@@ -970,7 +855,7 @@
         }
         
         // Add event listeners for color type changes to toggle gradients
-        $('#dotColorType, #cornerColorType, #cornerDotColorType, #bgColorType').on('change', toggleGradientOptions);
+        $('#dotColorType, #cornerColorType, #bgColorType').on('change', toggleGradientOptions);
         
         // Get all QR options from form fields
         function getQrOptions() {
@@ -1028,26 +913,6 @@
                         colorStops: [
                             { offset: 0, color: document.getElementById('cornerGradientColor1').value },
                             { offset: 1, color: document.getElementById('cornerGradientColor2').value }
-                        ]
-                    }
-                };
-            }
-            
-            // Corners dot options
-            if (document.getElementById('cornerDotColorType').value === 'single') {
-                options.cornersDotOptions = {
-                    color: document.getElementById('cornerDotColor').value,
-                    type: document.getElementById('cornerDotType').value,
-                };
-            } else {
-                options.cornersDotOptions = {
-                    type: document.getElementById('cornerDotType').value,
-                    gradient: {
-                        type: document.getElementById('cornerDotGradientType').value,
-                        rotation: parseInt(document.getElementById('cornerDotGradientRotation').value),
-                        colorStops: [
-                            { offset: 0, color: document.getElementById('cornerDotGradientColor1').value },
-                            { offset: 1, color: document.getElementById('cornerDotGradientColor2').value }
                         ]
                     }
                 };
@@ -1316,7 +1181,8 @@
                 }
             });
         }
-    });
+    }
+});
 </script>
 @endpush
 @endsection 

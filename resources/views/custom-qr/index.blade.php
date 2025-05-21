@@ -137,7 +137,12 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        $('#custom-qr-table').DataTable();
+        // Only initialize DataTable if there are rows in the table
+        // The 'No templates found' row doesn't count
+        if ($('#custom-qr-table tbody tr').length > 0 && 
+            !$('#custom-qr-table tbody tr td').text().includes('No templates found')) {
+            $('#custom-qr-table').DataTable();
+        }
     });
 </script>
 @endpush

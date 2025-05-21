@@ -9,7 +9,7 @@ class Invitation extends Model
 {
     use HasFactory;
 
-    protected $table = "invitation";
+    protected $table = "invitations";
     protected $primaryKey = 'id_invitation';
     protected $fillable = [
         "name_guest",
@@ -33,15 +33,24 @@ class Invitation extends Model
         "link_invitation",
         "image_qrcode_invitation",
         "custom_qr_path",
-        "custom_qr_template_id",
         "send_email_invitation",
         "checkin_invitation",
         "checkout_invitation",
+        "checkin_img_invitation",
+        "checkout_img_invitation",
         "email_sent",
         "email_read",
         "email_bounced",
+        "tracking_code",
+        "last_tracked_at",
+        "tracking_count",
+        "tracking_client",
+        "tracking_method",
         "last_scan_in",
         "last_scan_out",
+        "souvenir_claimed",
+        "souvenir_claimed_at",
+        "souvenir_claimed_img",
     ];
 
     // public $timestamps = false;
@@ -50,10 +59,5 @@ class Invitation extends Model
     public function doorPrizeWinner()
     {
         return $this->hasOne(DoorPrizeWinner::class, 'guest_id', 'id_invitation');
-    }
-
-    public function customQrTemplate()
-    {
-        return $this->belongsTo(CustomQrTemplate::class, 'custom_qr_template_id');
     }
 }

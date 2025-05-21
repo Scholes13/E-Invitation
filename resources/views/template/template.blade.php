@@ -107,7 +107,11 @@
 							                     </a>
 							                 </li>
                         
-                        @if (mySetting()->enable_rsvp == 1)
+                        @php
+                        $rsvpEnabled = property_exists(mySetting(), 'enable_rsvp') ? mySetting()->enable_rsvp == 1 : false;
+                        @endphp
+                        
+                        @if ($rsvpEnabled)
                         <li class="{{ request()->segment(1) == 'rsvp' ? 'active' : '' }}">
                             <a class="nav-link" href="{{ url('rsvp') }}">
                                 <i class="fas fa-reply"></i> <span>RSVP</span>
@@ -115,7 +119,11 @@
                         </li>
                         @endif
                         
-                        @if (isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1)
+                        @php
+                        $customQrEnabled = property_exists(mySetting(), 'enable_custom_qr') ? mySetting()->enable_custom_qr == 1 : false;
+                        @endphp
+                        
+                        @if ($customQrEnabled)
                         <li class="{{ request()->segment(1) == 'custom-qr' ? 'active' : '' }}">
                             <a class="nav-link" href="{{ url('custom-qr') }}">
                                 <i class="fas fa-qrcode"></i> <span>Custom QR Design</span>

@@ -15,12 +15,13 @@ use App\Models\Invitation;
 use App\Models\CustomQrTemplate;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Facades\File;
 
 class CustomQrController extends Controller
 {
     public function index()
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -30,7 +31,7 @@ class CustomQrController extends Controller
     
     public function create()
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -39,7 +40,7 @@ class CustomQrController extends Controller
     
     public function store(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -82,7 +83,7 @@ class CustomQrController extends Controller
     
     public function edit($id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -105,7 +106,7 @@ class CustomQrController extends Controller
     
     public function update(Request $request, $id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -155,7 +156,7 @@ class CustomQrController extends Controller
     
     public function destroy($id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -173,7 +174,7 @@ class CustomQrController extends Controller
     
     public function preview($id, Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -261,67 +262,107 @@ class CustomQrController extends Controller
         }
     }
     
+    public function generate($guestId, $templateId)
+    {
+        try {
+            // Validate params
+            $invitation = Invitation::findOrFail($guestId);
+            $template = CustomQrTemplate::findOrFail($templateId);
+            $qrCode = $invitation->qrcode_invitation;
+            
+            if (empty($qrCode)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Guest does not have a QR code'
+                ]);
+            }
+            
+            // Generate the QR code
+            $invitationController = new InvitationController();
+            $settings = $invitationController->prepareQRSettings($qrCode, $template);
+            
+            // Save the QR code to public path
+            $filePath = 'img/qrCode/' . $qrCode . '.png';
+            $fullPath = public_path($filePath);
+            
+            // Ensure directory exists
+            File::ensureDirectoryExists(public_path('img/qrCode'));
+            
+            // Generate QR code
+            $invitationController->generateQRWithJsLibrary($settings, $fullPath);
+            
+            // Update the invitation record
+            $invitation->update([
+                'custom_qr_template_id' => $template->id,
+                'image_qrcode_invitation' => '/' . $filePath
+            ]);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'QR code generated successfully',
+                'path' => '/' . $filePath
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error generating QR for guest: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate QR code: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
     public function generateQrForGuest($guestId, $templateId)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
-            return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
-        }
-        
-        $invitation = Invitation::findOrFail($guestId);
-        $template = CustomQrTemplate::findOrFail($templateId);
-        
-        // Generate QR data - use just the code instead of the full URL
-        $qrData = $invitation->qrcode_invitation;
-        
-        // Create QR code with appropriate error correction level
-        $qrCode = \Endroid\QrCode\QrCode::create($qrData)
-            ->setEncoding(new \Endroid\QrCode\Encoding\Encoding('UTF-8'))
-            ->setErrorCorrectionLevel(\Endroid\QrCode\ErrorCorrectionLevel::High)
-            ->setSize(300)
-            ->setMargin(10);
-        
-        // Set foreground and background colors
-        $fgColor = json_decode($template->fg_color, true);
-        $bgColor = json_decode($template->bg_color, true);
-        
-        if ($fgColor && is_array($fgColor)) {
-            $qrCode->setForegroundColor(new \Endroid\QrCode\Color\Color($fgColor['r'], $fgColor['g'], $fgColor['b']));
-        }
-        
-        if ($bgColor && is_array($bgColor)) {
-            $qrCode->setBackgroundColor(new \Endroid\QrCode\Color\Color($bgColor['r'], $bgColor['g'], $bgColor['b']));
-        }
-        
-        // Create writer
-        $writer = new \Endroid\QrCode\Writer\PngWriter();
-        
-        // Add logo if template has one
-        $result = null;
-        if ($template->logo_path && \Illuminate\Support\Facades\Storage::exists($template->logo_path)) {
-            $logoPath = \Illuminate\Support\Facades\Storage::path($template->logo_path);
-            $logo = \Endroid\QrCode\Logo\Logo::create($logoPath)
-                ->setResizeToWidth(isset($template->logo_size) ? (int)$template->logo_size : 80);
+        try {
+            // Validate params
+            $invitation = Invitation::findOrFail($guestId);
+            $template = CustomQrTemplate::findOrFail($templateId);
+            $qrCode = $invitation->qrcode_invitation;
             
-            $result = $writer->write($qrCode, $logo);
-        } else {
-            $result = $writer->write($qrCode);
+            if (empty($qrCode)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Guest does not have a QR code'
+                ]);
+            }
+            
+            // Generate the QR code
+            if ($template->is_advanced_branded || $template->is_branded) {
+                // Use branded QR generation
+                $qrImage = $this->generateAdvancedQr($qrCode, $template);
+            } else {
+                // Use normal QR generation
+                $qrImage = $this->generateCustomQr($qrCode, $template);
+            }
+            
+            // Save the QR code to public path
+            $filePath = 'img/qrCode/' . $qrCode . '.png';
+            $fullPath = public_path($filePath);
+            
+            // Ensure directory exists
+            File::ensureDirectoryExists(public_path('img/qrCode'));
+            
+            // Save the QR code
+            file_put_contents($fullPath, $qrImage);
+            
+            // Update the invitation record
+            $invitation->update([
+                'custom_qr_template_id' => $template->id,
+                'image_qrcode_invitation' => '/' . $filePath
+            ]);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'QR code generated successfully',
+                'path' => '/' . $filePath
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error generating QR for guest: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate QR code: ' . $e->getMessage()
+            ]);
         }
-        
-        // Save the QR code
-        $qrImagePath = 'public/img/qrCode/custom/' . $invitation->qrcode_invitation . '.png';
-        \Illuminate\Support\Facades\Storage::put($qrImagePath, $result->getString());
-        
-        // Also save to public directory for backward compatibility
-        \Illuminate\Support\Facades\File::ensureDirectoryExists(public_path('/img/qrCode/'));
-        file_put_contents(public_path('/img/qrCode/' . $invitation->qrcode_invitation . '.png'), $result->getString());
-        
-        // Update invitation with custom QR path
-        $invitation->update([
-            'custom_qr_path' => $qrImagePath,
-            'custom_qr_template_id' => $template->id
-        ]);
-        
-        return redirect()->back()->with('success', 'Custom QR code generated successfully');
     }
     
     protected function generateCustomQr($data, $template, $format = 'png')
@@ -643,7 +684,7 @@ class CustomQrController extends Controller
     // New method to create branded QR code with more advanced styling
     public function createBrandedQr(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -653,7 +694,7 @@ class CustomQrController extends Controller
     // Store a new branded QR template
     public function storeBrandedQr(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -705,7 +746,7 @@ class CustomQrController extends Controller
     // Generate and display a preview of a branded QR code
     public function previewBrandedQr(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -822,7 +863,7 @@ class CustomQrController extends Controller
      */
     public function advancedBrandedQr()
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -834,7 +875,7 @@ class CustomQrController extends Controller
      */
     public function previewAdvancedBrandedQr(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -905,7 +946,7 @@ class CustomQrController extends Controller
      */
     public function processAdvancedBrandedQr(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -1482,7 +1523,7 @@ class CustomQrController extends Controller
      */
     public function editBranded($id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -1509,7 +1550,7 @@ class CustomQrController extends Controller
      */
     public function updateBranded(Request $request, $id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -1583,7 +1624,7 @@ class CustomQrController extends Controller
      */
     public function editAdvancedBranded($id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -1610,7 +1651,7 @@ class CustomQrController extends Controller
      */
     public function updateAdvancedBranded(Request $request, $id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -1725,7 +1766,7 @@ class CustomQrController extends Controller
      */
     public function styledQR()
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -1739,7 +1780,7 @@ class CustomQrController extends Controller
      */
     public function unifiedQrEditor(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -1847,7 +1888,7 @@ class CustomQrController extends Controller
      */
     public function saveTemplateFromEditor(Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return response()->json(['error' => 'Custom QR feature is disabled'], 403);
         }
         
@@ -2242,7 +2283,7 @@ class CustomQrController extends Controller
      */
     public function setAsDefault($id)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -2265,7 +2306,7 @@ class CustomQrController extends Controller
      */
     public function apiPreview($id, Request $request)
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return response()->json(['error' => 'Custom QR feature is disabled'], 403);
         }
         
@@ -2294,6 +2335,32 @@ class CustomQrController extends Controller
                     ? (int)$settings['height'] : 300;
                 $settings['margin'] = isset($settings['margin']) && is_numeric($settings['margin']) 
                     ? (int)$settings['margin'] : 10;
+                
+                // Make sure image path is a full URL if present
+                if (isset($settings['image']) && !empty($settings['image'])) {
+                    if (strpos($settings['image'], 'http') !== 0 && strpos($settings['image'], 'data:') !== 0) {
+                        // Convert to full URL if it's a relative path
+                        if (strpos($settings['image'], '/storage/') === 0) {
+                            $settings['image'] = url($settings['image']);
+                        } else {
+                            $settings['image'] = url('storage/' . ltrim(str_replace('public/', '', $settings['image']), '/'));
+                        }
+                    }
+                }
+                // If no image in settings but template has a logo, use it
+                else if ($template->logo_path) {
+                    $logoUrl = Storage::url(str_replace('public/', '', $template->logo_path));
+                    $settings['image'] = url($logoUrl);
+                    
+                    if (!isset($settings['imageOptions'])) {
+                        $settings['imageOptions'] = [
+                            'hideBackgroundDots' => true,
+                            'imageSize' => 0.4,
+                            'margin' => 5,
+                            'crossOrigin' => 'anonymous'
+                        ];
+                    }
+                }
                 
                 // Log the dimension values for debugging
                 \Log::info('QR dimensions: ' . $settings['width'] . 'x' . $settings['height'] . ', margin: ' . $settings['margin']);
@@ -2357,14 +2424,70 @@ class CustomQrController extends Controller
             
             // Add logo if template has one
             $result = null;
-            if ($template->logo_path && \Illuminate\Support\Facades\Storage::exists($template->logo_path)) {
+            $logoPath = null;
+            
+            // Try to get logo from settings first
+            if (isset($settings['image']) && !empty($settings['image'])) {
+                $logoUrl = $settings['image'];
+                
+                // Handle different logo URL formats
+                if (strpos($logoUrl, 'data:image') === 0) {
+                    // It's a base64 image, save it to a temp file
+                    $parts = explode(',', $logoUrl);
+                    if (count($parts) > 1) {
+                        $tempFile = tempnam(sys_get_temp_dir(), 'qrlogo');
+                        file_put_contents($tempFile, base64_decode($parts[1]));
+                        $logoPath = $tempFile;
+                    }
+                } 
+                elseif (strpos($logoUrl, '/storage/') !== false) {
+                    // It's a storage URL
+                    $relativePath = str_replace([url('/storage/'), '/storage/'], '', $logoUrl);
+                    $logoPath = storage_path('app/public/' . $relativePath);
+                }
+                elseif (strpos($logoUrl, 'http') === 0) {
+                    // It's a remote URL, try to download it
+                    try {
+                        $tempFile = tempnam(sys_get_temp_dir(), 'qrlogo');
+                        $content = @file_get_contents($logoUrl);
+                        if ($content !== false) {
+                            file_put_contents($tempFile, $content);
+                            $logoPath = $tempFile;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning("Could not download logo from URL: $logoUrl - " . $e->getMessage());
+                    }
+                }
+            }
+            
+            // Fall back to template logo path if needed
+            if (!$logoPath && $template->logo_path && \Illuminate\Support\Facades\Storage::exists($template->logo_path)) {
                 $logoPath = \Illuminate\Support\Facades\Storage::path($template->logo_path);
+            }
+            
+            // Logo size calculation
+            $logoSize = 80; // Default
+            if (isset($settings['imageOptions']) && isset($settings['imageOptions']['imageSize'])) {
+                $sizePercentage = floatval($settings['imageOptions']['imageSize']);
+                $baseSize = isset($settings['width']) ? (int)$settings['width'] : 300;
+                $logoSize = (int)($sizePercentage * $baseSize);
+            } elseif (isset($template->logo_size)) {
+                $logoSize = (int)$template->logo_size;
+            }
+            
+            // Create QR with or without logo
+            if ($logoPath && file_exists($logoPath)) {
                 $logo = \Endroid\QrCode\Logo\Logo::create($logoPath)
-                    ->setResizeToWidth(isset($template->logo_size) ? (int)$template->logo_size : 80);
+                    ->setResizeToWidth($logoSize);
                 
                 $result = $writer->write($qrCode, $logo);
             } else {
                 $result = $writer->write($qrCode);
+            }
+            
+            // Clean up any temp files
+            if (isset($tempFile) && file_exists($tempFile)) {
+                @unlink($tempFile);
             }
             
             // Build the response with settings and preview
@@ -2396,86 +2519,69 @@ class CustomQrController extends Controller
      */
     public function regenerateAllQrCodes()
     {
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
         try {
-            // Get default template
+            // Find default template
             $defaultTemplate = CustomQrTemplate::where('is_default', true)->first();
-            
             if (!$defaultTemplate) {
-                return redirect()->route('custom-qr.index')->with('error', 'No default template found');
+                return redirect('custom-qr')->with('error', 'No default template found. Please set a default template first.');
             }
             
-            // Get all invitations
-            $invitations = \App\Models\Invitation::all();
-            $count = 0;
+            // Get all invitations with QR codes
+            $invitations = Invitation::whereNotNull('qrcode_invitation')->get();
             
+            // Count for feedback
+            $total = $invitations->count();
+            $generated = 0;
+            $failed = 0;
+            
+            // Create InvitationController instance
+            $invitationController = new InvitationController();
+            
+            // Loop through invitations and regenerate QR codes
             foreach ($invitations as $invitation) {
-                $qrData = $invitation->qrcode_invitation;
-                
-                // Create QR code with appropriate error correction level
-                $qrCode = \Endroid\QrCode\QrCode::create($qrData)
-                    ->setEncoding(new \Endroid\QrCode\Encoding\Encoding('UTF-8'))
-                    ->setErrorCorrectionLevel(\Endroid\QrCode\ErrorCorrectionLevel::High)
-                    ->setSize(300)
-                    ->setMargin(10);
-                
-                // Set foreground and background colors
-                $fgColor = json_decode($defaultTemplate->fg_color, true);
-                $bgColor = json_decode($defaultTemplate->bg_color, true);
-                
-                if ($fgColor && is_array($fgColor)) {
-                    $qrCode->setForegroundColor(new \Endroid\QrCode\Color\Color($fgColor['r'], $fgColor['g'], $fgColor['b']));
-                }
-                
-                if ($bgColor && is_array($bgColor)) {
-                    $qrCode->setBackgroundColor(new \Endroid\QrCode\Color\Color($bgColor['r'], $bgColor['g'], $bgColor['b']));
-                }
-                
-                // Create writer
-                $writer = new \Endroid\QrCode\Writer\PngWriter();
-                
-                // Add logo if template has one
-                $result = null;
-                if ($defaultTemplate->logo_path && \Illuminate\Support\Facades\Storage::exists($defaultTemplate->logo_path)) {
-                    $logoPath = \Illuminate\Support\Facades\Storage::path($defaultTemplate->logo_path);
-                    $logo = \Endroid\QrCode\Logo\Logo::create($logoPath)
-                        ->setResizeToWidth(isset($defaultTemplate->logo_size) ? (int)$defaultTemplate->logo_size : 80);
+                try {
+                    $qrCode = $invitation->qrcode_invitation;
                     
-                    $result = $writer->write($qrCode, $logo);
-                } else {
-                    $result = $writer->write($qrCode);
+                    // Prepare settings
+                    $settings = $invitationController->prepareQRSettings($qrCode, $defaultTemplate);
+                    
+                    // Define output path
+                    $filePath = 'img/qrCode/' . $qrCode . '.png';
+                    $fullPath = public_path($filePath);
+                    
+                    // Generate QR code
+                    File::ensureDirectoryExists(public_path('img/qrCode'));
+                    $invitationController->generateQRWithJsLibrary($settings, $fullPath);
+                    
+                    // Update invitation record
+                    $invitation->update([
+                        'custom_qr_template_id' => $defaultTemplate->id,
+                        'image_qrcode_invitation' => '/' . $filePath
+                    ]);
+                    
+                    $generated++;
+                } catch (\Exception $e) {
+                    \Log::error('Error regenerating QR for invitation #' . $invitation->id_invitation . ': ' . $e->getMessage());
+                    $failed++;
                 }
-                
-                // Save the QR code to storage and public directory
-                $qrImagePath = 'public/img/qrCode/' . $invitation->qrcode_invitation . '.png';
-                \Illuminate\Support\Facades\Storage::put($qrImagePath, $result->getString());
-                
-                // Also save to public path for backward compatibility
-                file_put_contents(public_path('/img/qrCode/' . $invitation->qrcode_invitation . '.png'), $result->getString());
-                
-                // Update invitation with custom QR path
-                $invitation->update([
-                    'custom_qr_template_id' => $defaultTemplate->id,
-                    'custom_qr_path' => $qrImagePath
-                ]);
-                
-                $count++;
             }
             
-            return redirect()->route('custom-qr.index')->with('success', "Successfully regenerated $count QR codes using the default template.");
+            return redirect('custom-qr')->with('success', "QR codes regenerated: $generated successful, $failed failed (out of $total total)");
+            
         } catch (\Exception $e) {
-            \Log::error('Error in regenerateAllQrCodes: ' . $e->getMessage());
-            return redirect()->route('custom-qr.index')->with('error', 'Failed to regenerate QR codes: ' . $e->getMessage());
+            \Log::error('Error in regenerateAllQrCodes: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return redirect('custom-qr')->with('error', 'Failed to regenerate QR codes: ' . $e->getMessage());
         }
     }
 
     public function applyToAllGuests($templateId)
     {
         // Make sure the custom QR feature is enabled
-        if (!isset(mySetting()->enable_custom_qr) || mySetting()->enable_custom_qr != 1) {
+        if (!property_exists(mySetting(), 'enable_custom_qr') || mySetting()->enable_custom_qr != 1) {
             return redirect('dashboard')->with('error', 'Custom QR feature is disabled');
         }
         
@@ -2558,5 +2664,18 @@ class CustomQrController extends Controller
             \Log::error("Error in applyToAllGuests: " . $e->getMessage());
             return redirect()->route('custom-qr.index')->with('error', 'Error applying template to all guests: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Helper function to get standardized QR code path - using public directory only
+     * 
+     * @param string $code QR code
+     * @param bool $fullPath Return full system path if true, relative path if false
+     * @return string Path to QR code
+     */
+    protected function getQrCodePath($code, $fullPath = false)
+    {
+        $relativePath = 'img/qrCode/' . $code . '.png';
+        return $fullPath ? public_path($relativePath) : $relativePath;
     }
 } 

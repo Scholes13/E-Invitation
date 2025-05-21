@@ -56,38 +56,8 @@ class BlastingController extends Controller
     }
 
     /**
-     * Track email opens
+     * Send invitation email using mail-tracker for tracking
      */
-    public function track($code)
-    {
-        try {
-            // Find invitation by the tracking code
-            $invitation = Invitation::where('qrcode_invitation', $code)->first();
-            
-            if ($invitation) {
-                // Update to mark email as read
-                $invitation->update([
-                    'email_read' => true
-                ]);
-            }
-            
-            // Return a 1x1 transparent pixel
-            $pixel = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
-            return Response::make($pixel, 200, [
-                'Content-Type' => 'image/gif',
-                'Content-Length' => strlen($pixel),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Email tracking error: ' . $e->getMessage());
-            // Still return pixel even if there's an error to avoid breaking email client
-            $pixel = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
-            return Response::make($pixel, 200, [
-                'Content-Type' => 'image/gif',
-                'Content-Length' => strlen($pixel),
-            ]);
-        }
-    }
-
     private function sendInvitation(Invitation $invitation)
     {
         if (!$invitation->email_guest) {
@@ -103,24 +73,55 @@ class BlastingController extends Controller
 
             // Process email body template with new variable format
             $template = $setting->email_template_blasting;
+            
+            // Log email attempt
+            Log::info("Attempting to send email to {$invitation->email_guest}", [
+                'name' => $invitation->name_guest,
+                'qrcode' => $invitation->qrcode_invitation,
+            ]);
+            
             if ($template) {
                 $template = $this->replaceTemplateVariables($template, $invitation);
-                
-                // Add tracking pixel to email
-                $trackingUrl = url("/track-email/{$invitation->qrcode_invitation}");
-                $trackingPixel = '<img src="'.$trackingUrl.'" width="1" height="1" alt="" style="display:none">';
-                $template .= $trackingPixel;
             }
 
-            Mail::to($invitation->email_guest)
-                ->send(new InvitationMail($invitation, $subject, $template));
-
-            // Update invitation status
-            $invitation->update([
-                'email_sent' => true,
-                'email_read' => false,
-                'email_bounced' => false
-            ]);
+            // Debug log before sending
+            Log::info("About to send email to {$invitation->email_guest} using mail-tracker");
+            
+            try {
+                // Create the mailable instance
+                $mailable = new InvitationMail($invitation, $subject, $template);
+                
+                // Send email with mail-tracker
+                // First try with log mailer for debugging
+                Log::info("Sending to log mailer first for debugging");
+                Mail::mailer('log')->to($invitation->email_guest)->send($mailable);
+                
+                // Now send the actual email
+                Log::info("Now sending actual email");
+                Mail::to($invitation->email_guest)->send($mailable);
+                
+                Log::info("Email sent successfully to {$invitation->email_guest}");
+                
+                // Update invitation status
+                $invitation->update([
+                    'email_sent' => true,
+                    'email_bounced' => false
+                ]);
+                
+            } catch (\Exception $e) {
+                Log::error("Failed to send email: " . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString(),
+                    'email' => $invitation->email_guest ?? 'unknown'
+                ]);
+                
+                // Update invitation status for bounced email
+                $invitation->update([
+                    'email_sent' => true,
+                    'email_bounced' => true
+                ]);
+                
+                throw $e;
+            }
 
         } catch (\Exception $e) {
             // Update invitation status for bounced email
@@ -128,6 +129,12 @@ class BlastingController extends Controller
                 'email_sent' => true,
                 'email_bounced' => true
             ]);
+            
+            Log::error("Failed to send email: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'email' => $invitation->email_guest ?? 'unknown'
+            ]);
+            
             throw $e;
         }
     }

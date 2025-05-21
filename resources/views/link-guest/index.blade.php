@@ -95,20 +95,17 @@
 						<!-- Bagian QR Code yang ingin dihilangkan -->
 						<div class="text-center mt-4">
 							@php
-								$qrImagePath = '';
-								$customQrEnabled = isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1;
-								$templateId = $customQrEnabled ? ($invt->custom_qr_template_id ?? null) : null;
+								// Standardized path for QR code image
+								$qrImagePath = '/img/qrCode/' . $invt->qrcode_invitation . '.png';
 								$qrData = $invt->qrcode_invitation;
 								
-								// Only use custom QR path if feature is enabled
-								if ($customQrEnabled && $invt->custom_qr_path) {
-									$qrImagePath = str_replace('public/', 'storage/', $invt->custom_qr_path);
-								} else {
-									$qrImagePath = '/img/qrCode/' . $invt->qrcode_invitation . '.png';
-								}
+								// Force QR to be freshly generated - use a more reliable timestamp
+								$uniqueParam = time() . '-' . rand(1000, 9999);
 							@endphp
 							
-							<div id="qrcode-container" style="width: 300px; height: 300px; margin: 0 auto;"></div>
+							<div id="qrcode-container" style="width: 300px; height: 300px; margin: 0 auto;">
+								<img src="{{ asset($qrImagePath) }}?v={{ $uniqueParam }}" class="rounded" style="width: 100%; height: 100%; object-fit: contain;" alt="QR Code">
+							</div>
 							<h5 class="mt-3">
 								<div id="qrcode-id" class="h6" style="cursor:pointer">
 									<span>
@@ -121,7 +118,11 @@
 							<a class="shadow-none btn rounded-pill btn-warning my-2"
 								href="{{ url('download/' . $invt->qrcode_invitation) }}">Download QrCode</a>
                             
-                            @if (mySetting()->enable_rsvp == 1)
+                            @php
+                            $rsvpEnabled = property_exists(mySetting(), 'enable_rsvp') ? mySetting()->enable_rsvp == 1 : false;
+                            @endphp
+                            
+                            @if ($rsvpEnabled)
                             <a class="shadow-none btn rounded-pill btn-info my-2 ml-2"
                                 href="{{ route('rsvp.guestForm', ['qrcode' => $invt->qrcode_invitation]) }}">Respond to RSVP</a>
                             @endif
@@ -165,8 +166,8 @@
     <!-- Template JS File -->
     <script src="{{ asset('template/assets/js/scripts.js') }}"></script>
     
-    <!-- QR Code Styling library -->
-    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <!-- QR Code Styling library - disabled to ensure consistency -->
+    <!-- <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script> -->
 
     <script>
         $(document).ready(function() {
@@ -194,53 +195,8 @@
                 });
             }
             
-            // Initialize QR code with styling
-            const templateId = {{ $templateId ?? 'null' }};
-            const qrData = "{{ $qrData }}";
-            const customQrEnabled = {{ $customQrEnabled ? 'true' : 'false' }};
-            
-            if (customQrEnabled && templateId) {
-                // Fetch template settings from API
-                fetch(`/api/custom-qr/${templateId}/preview?data=${encodeURIComponent(qrData)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.template && data.template.settings) {
-                            // Create QR with the template settings
-                            const settings = data.template.settings;
-                            
-                            // Match Endroid dimensions - use 300x300 size
-                            settings.width = 300;
-                            settings.height = 300;
-                            
-                            // Match Endroid margin of 10
-                            settings.margin = 10;
-                            
-                            // Ensure errorCorrectionLevel is set to H like Endroid
-                            if (settings.qrOptions) {
-                                settings.qrOptions.errorCorrectionLevel = 'H';
-                            }
-                            
-                            const qrCode = new QRCodeStyling(settings);
-                            qrCode.append(document.getElementById("qrcode-container"));
-                        } else {
-                            // Fallback - show the static image if API fails
-                            fallbackToStaticImage();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching QR template:', error);
-                        fallbackToStaticImage();
-                    });
-            } else {
-                fallbackToStaticImage();
-            }
-            
-            function fallbackToStaticImage() {
-                // Create fallback image
-                const qrImagePath = "{{ asset($qrImagePath) }}";
-                const container = document.getElementById("qrcode-container");
-                container.innerHTML = `<img src="${qrImagePath}" class="rounded" style="width: 100%; height: 100%; object-fit: contain;" alt="QR Code">`;
-            }
+            // Kode QR styling lama sudah dihapus untuk menghindari error
+            // dan memastikan konsistensi antara QR yang ditampilkan dengan yang didownload
         });
     </script>
 

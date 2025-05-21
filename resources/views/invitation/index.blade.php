@@ -18,7 +18,10 @@
                         <h4>Undangan Tamu</h4>
                         <div class="card-header-action">
                             <a class="btn btn-sm btn-primary" href="{{ url('invite/create') }}"><i class="fa fa-plus"></i> Tambah</a>
-                            @if(isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1)
+                            @php
+                            $customQrEnabled = property_exists(mySetting(), 'enable_custom_qr') ? mySetting()->enable_custom_qr == 1 : false;
+                            @endphp
+                            @if($customQrEnabled)
                             <a class="btn btn-sm btn-warning" href="{{ url('custom-qr/regenerate-all') }}" onclick="return confirm('Ini akan menghasilkan ulang semua kode QR dengan template default. Lanjutkan?')">
                                 <i class="fa fa-sync"></i> Regenerate QR Codes
                             </a>
@@ -54,25 +57,25 @@
                                             <td>{{ ucfirst($invitation->created_by_guest) }}</td>
                                             <td class="text-center">
                                                 <div class="buttons">
+                                                    @if ($invitation->email_bounced)
+                                                        <div class="btn-block text-center mb-2">
+                                                            <span class="badge badge-danger status-badge"><i class="fa fa-times-circle"></i> Bounced</span>
+                                                        </div>
+                                                    @elseif ($invitation->email_read)
+                                                        <div class="btn-block text-center mb-2">
+                                                            <span class="badge badge-info status-badge"><i class="fa fa-check-double"></i> Read</span>
+                                                        </div>
+                                                    @elseif ($invitation->email_sent)
+                                                        <div class="btn-block text-center mb-2">
+                                                            <span class="badge badge-success status-badge"><i class="fa fa-check-circle"></i> Sent</span>
+                                                        </div>
+                                                    @else
+                                                        <div class="btn-block text-center mb-2">
+                                                            <span class="badge badge-warning status-badge"><i class="fa fa-clock"></i> Waiting</span>
+                                                        </div>
+                                                    @endif
+                                                    
                                                     @if (mySetting()->send_email == 1)
-                                                        @if ($invitation->email_bounced)
-                                                            <div class="btn-block text-center mb-2">
-                                                                <span class="badge badge-danger status-badge">Bounced</span>
-                                                            </div>
-                                                        @elseif ($invitation->email_read)
-                                                            <div class="btn-block text-center mb-2">
-                                                                <span class="badge badge-info status-badge">Read</span>
-                                                            </div>
-                                                        @elseif ($invitation->email_sent)
-                                                            <div class="btn-block text-center mb-2">
-                                                                <span class="badge badge-success status-badge">Sent</span>
-                                                            </div>
-                                                        @else
-                                                            <div class="btn-block text-center mb-2">
-                                                                <span class="badge badge-warning status-badge">Waiting</span>
-                                                            </div>
-                                                        @endif
-                                                        
                                                         <a class="btn btn-sm btn-primary mb-2 btn-block" title="Kirim Email"
                                                             data-email="{{ $invitation->email_guest }}"
                                                             data-name="{{ $invitation->name_guest }}"
@@ -85,20 +88,6 @@
                                                         <a class="btn btn-sm btn-success btn-block" title="Kirim Whatsapp" target="_blank"
                                                             href="{{ 'https://api.whatsapp.com/send?phone='.decode_phone($invitation->phone_guest).'&text=Link%20undangan%20:%20'.url('').$invitation->link_invitation }}">
                                                             <i class="fab fa-whatsapp"></i> Send WA
-                                                        </a>
-                                                    @endif
-                                                    
-                                                    @if (mySetting()->enable_rsvp == 1)
-                                                        <a class="btn btn-sm btn-info btn-block" title="RSVP Link" target="_blank"
-                                                            href="{{ route('rsvp.guestForm', ['qrcode' => $invitation->qrcode_invitation]) }}">
-                                                            <i class="fas fa-reply"></i> RSVP Link
-                                                        </a>
-                                                    @endif
-
-                                                    @if(isset(mySetting()->enable_custom_qr) && mySetting()->enable_custom_qr == 1 && count($customQrTemplates) > 0)
-                                                        <a class="btn btn-sm btn-secondary btn-block" title="Custom QR" href="#" 
-                                                            onclick="showCustomQrModal({{ $invitation->id_invitation }})">
-                                                            <i class="fas fa-qrcode"></i> Custom QR
                                                         </a>
                                                     @endif
                                                 </div>
@@ -281,11 +270,16 @@
         .status-badge {
             width: 100%;
             display: block;
-            padding: 8px;
+            padding: 10px;
             text-align: center;
             border-radius: 3px;
-            font-size: 13px;
-            margin-bottom: 5px;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .status-badge i {
+            margin-right: 5px;
+            font-size: 16px;
         }
         .badge-warning {
             color: #212529;

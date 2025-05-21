@@ -46,7 +46,7 @@ Route::get('logout', [AuthController::class, "logout"]);
 
 // For guest 
 Route::controller(InvitationController::class)->group(function () {
-    Route::get('/invitation/{qrcode}', 'linkGuest');
+    Route::get('/invitation/{qrcode}', 'linkGuest')->name('link-guest');
     Route::get('/download/{qrcode}', 'downloadQrCode');
     Route::get('/register', 'guestRegister');
     Route::post('/register-process', 'guestRegisterProcess');
@@ -164,35 +164,12 @@ Route::middleware(['auth'])->group(function () {
         Route::controller(BlastingController::class)->group(function () {
             Route::get('/blasting', 'index')->name('blasting.index');
             Route::post('/blasting/send', 'send')->name('blasting.send');
-            Route::get('/track-email/{code}', 'track')->name('blasting.track');
         });
 
         // Email template settings
         Route::controller(SettingController::class)->group(function () {
             Route::get('/setting/email-template', 'emailTemplate')->name('setting.emailTemplate');
             Route::put('/setting/email-template-update', 'emailTemplateUpdate')->name('setting.emailTemplateUpdate');
-        });
-    });
-
-    // Custom QR Design Feature Routes
-    Route::middleware(['auth', 'custom.qr'])->group(function () {
-        Route::prefix('custom-qr')->group(function () {
-            Route::get('/', 'App\Http\Controllers\CustomQrController@index')->name('custom-qr.index');
-            Route::get('/create', 'App\Http\Controllers\CustomQrController@unifiedQrEditor')->name('custom-qr.create');
-            Route::post('/', 'App\Http\Controllers\CustomQrController@store')->name('custom-qr.store');
-            Route::get('/{id}/edit', 'App\Http\Controllers\CustomQrController@unifiedQrEditor')->name('custom-qr.edit');
-            Route::put('/{id}', 'App\Http\Controllers\CustomQrController@update')->name('custom-qr.update');
-            Route::delete('/{id}', 'App\Http\Controllers\CustomQrController@destroy')->name('custom-qr.destroy');
-            Route::get('/{id}/preview', 'App\Http\Controllers\CustomQrController@preview')->name('custom-qr.preview');
-            Route::get('/{id}/api-preview', 'App\Http\Controllers\CustomQrController@apiPreview')->name('custom-qr.apiPreview');
-            Route::post('/generate/{guestId}/{templateId}', 'App\Http\Controllers\CustomQrController@generateQrForGuest')->name('custom-qr.generate');
-            Route::post('/{id}/set-default', 'App\Http\Controllers\CustomQrController@setAsDefault')->name('custom-qr.set-default');
-            Route::get('/regenerate-all', 'App\Http\Controllers\CustomQrController@regenerateAllQrCodes')->name('custom-qr.regenerate-all');
-            
-            // Remove any remaining old editor routes that could cause confusion
-            
-            // Route for API calls to save templates from the editor
-            Route::post('/save-template', 'App\Http\Controllers\CustomQrController@saveTemplateFromEditor')->name('custom-qr.saveTemplate');
         });
     });
 });
@@ -202,4 +179,15 @@ Route::controller(RsvpController::class)->group(function () {
     Route::get('/rsvp/guest/{qrcode}', 'guestRsvpForm')->name('rsvp.guestForm');
     Route::post('/rsvp/guest/{qrcode}', 'processRsvp')->name('rsvp.process');
     Route::get('/rsvp/thank-you/{qrcode}', 'thankYou')->name('rsvp.thank-you');
+});
+
+// OLD email tracking routes - disabled in favor of mail-tracker
+// Route::get('/track-email/{code}', [BlastingController::class, 'track'])->name('blasting.track');
+// Route::get('/track-confirm/{code}', [BlastingController::class, 'trackConfirm'])->name('blasting.trackConfirm');
+
+// Mail-tracker admin routes (requires admin access)
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/email-analytics', function() {
+        return redirect('/email-manager'); // Redirect to mail-tracker's admin panel
+    })->name('email.analytics');
 });

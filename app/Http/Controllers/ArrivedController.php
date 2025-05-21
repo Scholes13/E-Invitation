@@ -7,9 +7,11 @@ use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Traits\QrCodeValidator;
 
 class ArrivedController extends Controller
 {
+    use QrCodeValidator;
 
     public function index()
     {
@@ -22,15 +24,42 @@ class ArrivedController extends Controller
 
     public function processScan(Request $request)
     {
-
-        if($request->come == 1){
-            $data['checkout_invitation'] = Carbon::now();
-        } else {
-            $data['checkin_invitation'] = Carbon::now();
+        try {
+            // Validate input parameters
+            $id = $request->id;
+            $come = $request->come;
+            
+            if (empty($id)) {
+                return redirect('/arrived-manually')->with('error', "ID undangan tidak valid");
+            }
+            
+            if (!in_array($come, [0, 1])) {
+                return redirect('/arrived-manually')->with('error', "Parameter 'come' tidak valid");
+            }
+            
+            // Process within transaction for consistency
+            \DB::transaction(function() use ($id, $come) {
+                // Lock the record for update to prevent race conditions
+                $invitation = Invitation::where('id_invitation', $id)->lockForUpdate()->first();
+                
+                if (!$invitation) {
+                    return redirect('/arrived-manually')->with('error', "Undangan tidak ditemukan");
+                }
+                
+                if($come == 1){
+                    $data['checkout_invitation'] = \Carbon\Carbon::now();
+                } else {
+                    $data['checkin_invitation'] = \Carbon\Carbon::now();
+                }
+                
+                Invitation::where('id_invitation', $id)->update($data);
+            });
+            
+            return redirect('/arrived-manually')->with('success', "Scan Manual Berhasil");
+        } catch (\Exception $e) {
+            \Log::error('Arrived process scan error: ' . $e->getMessage());
+            return redirect('/arrived-manually')->with('error', "Terjadi kesalahan: " . $e->getMessage());
         }
-
-        Invitation::where('id_invitation', $request->id)->update($data);
-        return redirect('/arrived-manually')->with('success', "Scan Manual Berhasil");
     }
 
 

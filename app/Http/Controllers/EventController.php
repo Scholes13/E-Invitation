@@ -25,7 +25,7 @@ class EventController extends Controller
             'place' => 'required|string|min:3|max:200',
             'location' => 'required|string|min:3|max:200',
             'start' => 'required|date|after:today',
-            'end' => 'required|date|after:start_event',
+            'end' => 'required|date|after:start',
             'image' => 'nullable|image|max:512|mimes:jpg,jpeg,png',
             'image_left_event' => 'nullable|image|max:1024|mimes:jpg,jpeg,png',
             'image_right_event' => 'nullable|image|max:1024|mimes:jpg,jpeg,png',

@@ -54,7 +54,7 @@
                       </div>
                       <div class="form-group">
                         <label for="">Nomor Meja</label>
-                        <input class="form-control" name="table_number" value="{{ old('phone') }}" type="text">
+                        <input class="form-control" name="table_number" value="{{ old('table_number') }}" type="text">
                         @error('table_number')
                           <small class="text-danger"> {{ $message }} </small>
                         @enderror

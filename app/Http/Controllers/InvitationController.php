@@ -109,7 +109,7 @@ class InvitationController extends Controller
                 $img = 'asset/front/default.png';
             endif;
             // set_time_limit(0); // remove a time limit if not in safe mode OR
-            set_time_limit(180); // set the time limit to 120 seconds
+            set_time_limit(180); // set the time limit to 180 seconds
 
             $mail->SMTPDebug  = SMTP::DEBUG_OFF;                        //Enable verbose debug output
             $mail->isSMTP();           

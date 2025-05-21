@@ -51,14 +51,14 @@
 									</div>
 									<div class="form-group">
 										<label for="">Mulai Acara *</label>
-										<input class="form-control @error('start') is-invalid @enderror" name="start" value="{{ old('location', $event->start_event) }}" type="datetime-local">
+                                        <input class="form-control @error('start') is-invalid @enderror" name="start" value="{{ old('start', $event->start_event) }}" type="datetime-local">
 										@error('start')
 										<small class="text-danger"> {{ $message }} </small>
 										@enderror
 									</div>
 									<div class="form-group">
 										<label for="">Selesai Acara *</label>
-										<input class="form-control @error('end') is-invalid @enderror" name="end" value="{{ old('location', $event->end_event) }}" type="datetime-local">
+                                        <input class="form-control @error('end') is-invalid @enderror" name="end" value="{{ old('end', $event->end_event) }}" type="datetime-local">
 										@error('end')
 										<small class="text-danger"> {{ $message }} </small>
 										@enderror
